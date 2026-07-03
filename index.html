@@ -617,27 +617,36 @@
     function fecharAviso() {
   document.getElementById('avisoModal').style.display = 'none';}
 
- function gerarPDF() {
+function gerarPDF() {
   const elemento = document.querySelector('main');
   
-  // 1. Guarda o estilo atual para não desconfigurar a tela do utilizador depois
+  // 1. Guarda o visual original do seu painel
   const estiloOriginal = elemento.style.cssText;
+  const classesOriginais = elemento.className;
   
-  // 2. Trava a largura da tela em 1200px (tamanho de ecrã de computador) temporariamente
-  elemento.style.width = '1200px';
-  elemento.style.maxWidth = '1200px';
+  // 2. Força o painel a ficar bem largo (1600px) apenas para a foto
+  // (Isso impede que as tabelas e gráficos se esmaguem)
+  elemento.className = "flex-1 w-full p-8 flex flex-col gap-6 bg-slate-50"; 
+  elemento.style.width = '1600px'; 
+  elemento.style.maxWidth = '1600px';
   
-  // 3. Configurações limpas e seguras para a geração do PDF
+  // 3. Configura a folha A4 na horizontal
   const opt = {
-    margin:       10,
+    margin:       5,
     filename:     'Relatorio_Prova_Paulista.pdf',
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+    image:        { type: 'jpeg', quality: 1 },
+    html2canvas:  { 
+      scale: 2, 
+      useCORS: true, 
+      windowWidth: 1600,
+      scrollY: 0
+    },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
   };
 
-  // 4. Gera o PDF e, quando terminar, devolve o painel ao tamanho normal
+  // 4. Gera o PDF e restaura a tela do usuário instantaneamente
   html2pdf().set(opt).from(elemento).save().then(() => {
+    elemento.className = classesOriginais;
     elemento.style.cssText = estiloOriginal;
   });
 }
