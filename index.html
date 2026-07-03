@@ -13,6 +13,9 @@
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Biblioteca para exportar PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     /* Estilos complementares leves */
@@ -43,6 +46,11 @@
       <span id="summaryPill" class="px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700 text-sm font-semibold rounded-full shadow-sm">
         Carregando...
       </span>
+      <!-- COLE O BOTÃO AQUI -->
+      <button onclick="gerarPDF()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        Exportar .pdf
+      </button>
     </div>
   </header>
 
@@ -608,6 +616,23 @@
     });
     function fecharAviso() {
   document.getElementById('avisoModal').style.display = 'none';}
+
+    function gerarPDF() {
+  // Seleciona o conteúdo principal do dashboard
+  const elemento = document.querySelector('main');
+  
+  // Configurações do PDF
+  const opt = {
+    margin:       10,
+    filename:     'Relatorio_Prova_Paulista.pdf',
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  };
+
+  // Executa a geração
+  html2pdf().set(opt).from(elemento).save();
+}
   </script>
   <!-- Modal de Aviso -->
 <div id="avisoModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
