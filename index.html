@@ -619,20 +619,28 @@
 
 function gerarPDF() {
   const elemento = document.querySelector('main');
+  const chart = document.getElementById('subjectChart');
   
   // 1. Guarda o visual original do seu painel
   const estiloOriginal = elemento.style.cssText;
   const classesOriginais = elemento.className;
+  const chartClasses = chart ? chart.className : "";
   
-  // 2. Força o painel a ficar bem largo (1600px) apenas para a foto
-  // (Isso impede que as tabelas e gráficos se esmaguem)
-  elemento.className = "flex-1 w-full p-8 flex flex-col gap-6 bg-slate-50"; 
+  // 2. O TRUQUE DE MESTRE para caber em 1 página A4:
+  // Reduzimos o padding (p-4) e os espaços entre os blocos (gap-2)
+  elemento.className = "flex-1 w-full p-4 flex flex-col gap-2 bg-white"; 
   elemento.style.width = '1600px'; 
   elemento.style.maxWidth = '1600px';
   
+  // Reduzimos a altura do gráfico temporariamente (de 400px para 260px)
+  // Isto é crucial para não ultrapassar a altura da folha A4
+  if (chart) {
+    chart.className = "relative w-full h-[260px]";
+  }
+  
   // 3. Configura a folha A4 na horizontal
   const opt = {
-    margin:       5,
+    margin:       5, // margem pequena de 5mm para aproveitar bem o espaço
     filename:     'Relatorio_Prova_Paulista.pdf',
     image:        { type: 'jpeg', quality: 1 },
     html2canvas:  { 
@@ -644,10 +652,13 @@ function gerarPDF() {
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
   };
 
-  // 4. Gera o PDF e restaura a tela do usuário instantaneamente
+  // 4. Gera o PDF e restaura o ecrã do utilizador instantaneamente
   html2pdf().set(opt).from(elemento).save().then(() => {
     elemento.className = classesOriginais;
     elemento.style.cssText = estiloOriginal;
+    if (chart) {
+      chart.className = chartClasses;
+    }
   });
 }
 
