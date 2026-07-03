@@ -425,118 +425,7 @@
         }
       }
 
-      // ============================================================================
-      // INTEGRAÇÃO GEMINI API
-      // ============================================================================
-      async function fetchWithRetry(url, options, retries = 5) {
-        const delays = [1000, 2000, 4000, 8000, 16000];
-        for (let i = 0; i < retries; i++) {
-          try {
-            const response = await fetch(url, options);
-            if (!response.ok) throw new Error(`Erro na API (Status ${response.status})`);
-            return await response.json();
-          } catch (error) {
-            if (i === retries - 1) throw error;
-            console.warn(`Falha na chamada (Tentativa ${i+1}). Retentando em ${delays[i]}ms...`);
-            await new Promise(res => setTimeout(res, delays[i]));
-          }
-        }
-      }
-
-      function parseMarkdown(text) {
-        let html = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
-        html = html.replace(/\*(.*?)\*/g, '<i>$1</i>'); 
-        const lines = html.split('\n');
-        let inList = false;
-        html = lines.map(line => {
-          if (line.trim().startsWith('* ')) {
-            const li = `<li>${line.replace('* ', '')}</li>`;
-            if (!inList) { inList = true; return `<ul>${li}`; }
-            return li;
-          } else {
-            if (inList) { inList = false; return `</ul><p>${line}</p>`; }
-            return line.trim() ? `<p>${line}</p>` : '';
-          }
-        }).join('');
-        if (inList) html += '</ul>';
-        return html;
-      }
-
-      async function askGemini(prompt) {
-        const apiKey = ""; 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-        
-        const payload = {
-          contents: [{ parts: [{ text: prompt }] }],
-          systemInstruction: { parts: [{ text: "Você é um assistente pedagógico especializado na análise de dados da educação do Estado de São Paulo. Responda de forma direta, encorajadora, estruturada e em português do Brasil." }] }
-        };
-
-        try {
-          const result = await fetchWithRetry(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          
-          return result.candidates?.[0]?.content?.parts?.[0]?.text || "Ocorreu um erro ao gerar a análise.";
-        } catch (e) {
-          return "Desculpe, houve uma falha de conexão com a inteligência artificial. Tente novamente mais tarde.";
-        }
-      }
-
-      function getActiveDataForAI() {
-        const mode = getSelectedMode();
-        const data = getCurrentData();
-        return mode === "1" ? data.bim1 : (data.bim2 || data.bim1); 
-      }
-
-      function getTargetName() {
-        const s = els.schoolSelect.value;
-        return s === "__all__" ? "todas as escolas da regional (Visão Geral)" : s;
-      }
-
-      async function handleAiRequest(type) {
-        const activeData = getActiveDataForAI();
-        if (!activeData) return;
-
-        els.ai.btnSummary.disabled = true;
-        els.ai.btnActionPlan.disabled = true;
-        els.ai.outputContainer.classList.remove("hidden");
-        els.ai.outputText.innerHTML = '<div class="flex items-center gap-2 text-indigo-500"><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processando inteligência pedagógica...</div>';
-        initIcons();
-
-        const schoolName = getTargetName();
-        const best = getBestComponent(activeData);
-        const worst = getWorstComponent(activeData);
-        
-        let prompt = "";
-        
-        if (type === 'summary') {
-          prompt = `Atuando como coordenador pedagógico, escreva uma breve análise de desempenho (máximo de 2 parágrafos curtos) para os seguintes dados de ${schoolName}:
-          - Alunos Avaliados: ${activeData.totalAlunos}
-          - Taxa de Participação: ${formatPercent(activeData.participacao)}
-          - Média Geral de Acertos: ${formatPercent(activeData.acertos)}
-          - Ponto Forte (Melhor Matéria): ${best.name} com ${formatPercent(best.value)} de acertos
-          - Maior Dificuldade (Pior Matéria): ${worst.name} com apenas ${formatPercent(worst.value)} de acertos.
-          
-          Faça um elogio aos pontos positivos e destaque educadamente a necessidade de foco na matéria com dificuldade.`;
-        } else if (type === 'actionPlan') {
-          prompt = `Como especialista em educação, os alunos de ${schoolName} tiveram apenas ${formatPercent(worst.value)} de acertos na disciplina de ${worst.name}. 
-          
-          Crie um plano de ação rápido e prático com exatamente 3 tópicos (em formato de lista, bullet points) com sugestões de estratégias metodológicas ativas para os professores de ${worst.name} aplicarem em sala de aula visando melhorar a aprendizagem. Seja direto ao ponto.`;
-        }
-
-        const responseText = await askGemini(prompt);
-        
-        els.ai.outputText.innerHTML = parseMarkdown(responseText);
-        
-        els.ai.btnSummary.disabled = false;
-        els.ai.btnActionPlan.disabled = false;
-      }
-
-      els.ai.btnSummary.addEventListener('click', () => handleAiRequest('summary'));
-      els.ai.btnActionPlan.addEventListener('click', () => handleAiRequest('actionPlan'));
-
+    
       // ============================================================================
       // CORE UPDATE & INIT
       // ============================================================================
@@ -549,9 +438,7 @@
         renderKPIs(data, mode);
         renderChart(data, mode);
         renderTable(data, mode);
-        
-        
-        
+              
         initIcons();
       }
 
