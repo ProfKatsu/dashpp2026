@@ -1,441 +1,514 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prova Paulista 2026 | URE Mogi das Cruzes</title>
-<!-- Tailwind CSS para design -->
-<script src="https://cdn.tailwindcss.com"></script>
-<!-- Chart.js para gráficos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- Lucide Icons -->
-<script src="https://unpkg.com/lucide@latest"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prova Paulista 2026 | URE Mogi das Cruzes</title>
+  
+  <!-- Tailwind CSS para um design moderno e responsivo -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js para gráficos avançados -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-<style>
-body { background-color: #f8fafc; font-family: 'Inter', system-ui, sans-serif; }
-.glass-header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); }
-.table-container::-webkit-scrollbar { width: 6px; height: 6px; }
-.table-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
-</style>
+  <style>
+    /* Estilos complementares leves */
+    body { background-color: #f8fafc; font-family: 'Inter', system-ui, sans-serif; }
+    .glass-header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); }
+    .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+  </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
-<header class="glass-header sticky top-0 z-50 border-b border-slate-200 px-6 py-4 flex flex-col
-sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-<div>
-<p class="text-xs font-bold tracking-wider text-slate-500 uppercase mb-1">Unidade Regional de
-Ensino de Mogi das Cruzes</p>
-<h1 class="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-<i data-lucide="graduation-cap" class="text-blue-600"></i>
-Prova Paulista 2026
-</h1>
-</div>
-<div class="flex items-center gap-3">
-<span id="summaryPill" class="px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700
-text-sm font-semibold rounded-full shadow-sm">
-Carregando...
-</span>
-</div>
-</header>
 
-<main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
-<section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col
-lg:flex-row gap-6 justify-between items-start lg:items-center">
-<div class="w-full lg:w-1/3">
-<label for="schoolSelect" class="block text-sm font-semibold text-slate-700 mb-2 flex
-items-center gap-2">
-<i data-lucide="school" class="w-4 h-4 text-slate-400"></i> Escola
-</label>
+  <!-- Cabeçalho -->
+  <header class="glass-header sticky top-0 z-50 border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+    <div>
+      <p class="text-xs font-bold tracking-wider text-slate-500 uppercase mb-1">Unidade Regional de Ensino de Mogi das Cruzes</p>
+      <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+        <i data-lucide="graduation-cap" class="text-blue-600"></i>
+        Prova Paulista 2026
+      </h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="summaryPill" class="px-3 py-1 bg-blue-50 border border-blue-100 text-blue-700 text-sm font-semibold rounded-full shadow-sm">
+        Carregando...
+      </span>
+    </div>
+  </header>
 
-<select id="schoolSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-900
-text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 transition-colors">
-</select>
-</div>
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+    
+    <!-- Controles / Filtros -->
+    <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center" aria-label="Filtros">
+      
+      <div class="w-full lg:w-1/3">
+        <label for="schoolSelect" class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+          <i data-lucide="school" class="w-4 h-4 text-slate-400"></i> Escola
+        </label>
+        <select id="schoolSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 transition-colors">
+          <!-- Opções geradas via JS -->
+        </select>
+      </div>
 
-<div class="w-full lg:w-auto">
-<span class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-<i data-lucide="eye" class="w-4 h-4 text-slate-400"></i> Visualização
-</span>
-<div class="inline-flex bg-slate-100 rounded-lg p-1 border border-slate-200 w-full sm:w-auto">
-<label class="flex-1 sm:flex-none cursor-pointer">
-<input type="radio" name="mode" value="1" class="peer sr-only">
-<div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md
-peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all
-text-center">1o Bim</div>
-</label>
-<label class="flex-1 sm:flex-none cursor-pointer">
-<input type="radio" name="mode" value="2" class="peer sr-only">
-<div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md
-peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all
-text-center">2o Bim</div>
-</label>
-<label class="flex-1 sm:flex-none cursor-pointer">
-<input type="radio" name="mode" value="compare" class="peer sr-only" checked>
-<div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md
-peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all
-text-center">Comparativo</div>
-</label>
-</div>
-</div>
-</section>
+      <div class="w-full lg:w-auto">
+        <span class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+          <i data-lucide="eye" class="w-4 h-4 text-slate-400"></i> Visualização
+        </span>
+        <div class="inline-flex bg-slate-100 rounded-lg p-1 border border-slate-200 w-full sm:w-auto">
+          <label class="flex-1 sm:flex-none cursor-pointer">
+            <input type="radio" name="mode" value="1" class="peer sr-only">
+            <div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all text-center">1º Bim</div>
+          </label>
+          <label class="flex-1 sm:flex-none cursor-pointer">
+            <input type="radio" name="mode" value="2" class="peer sr-only">
+            <div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all text-center">2º Bim</div>
+          </label>
+          <label class="flex-1 sm:flex-none cursor-pointer">
+            <input type="radio" name="mode" value="compare" class="peer sr-only" checked>
+            <div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all text-center">Comparativo</div>
+          </label>
+        </div>
+      </div>
+    </section>
 
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-<article class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative
-overflow-hidden group hover:shadow-md transition-shadow">
-<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+    <!-- Cards de Indicadores (KPIs) -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Indicadores principais">
+      <article class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <i data-lucide="users" class="w-16 h-16"></i>
+        </div>
+        <span class="text-sm font-semibold text-slate-500 mb-1 block">Total de Alunos</span>
+        <div class="flex items-end gap-3">
+          <strong id="kpiStudents" class="text-3xl font-extrabold text-slate-900">-</strong>
+          <small id="kpiStudentsDelta" class="mb-1 font-medium"></small>
+        </div>
+      </article>
 
-<i data-lucide="users" class="w-16 h-16"></i>
-</div>
-<span class="text-sm font-semibold text-slate-500 mb-1 block">Total de Alunos</span>
-<div class="flex items-end gap-3">
-<strong id="kpiStudents" class="text-3xl font-extrabold text-slate-900">-</strong>
-<small id="kpiStudentsDelta" class="mb-1 font-medium"></small>
-</div>
-</article>
+      <article class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <i data-lucide="pie-chart" class="w-16 h-16"></i>
+        </div>
+        <span class="text-sm font-semibold text-slate-500 mb-1 block">Participação</span>
+        <div class="flex items-end gap-3">
+          <strong id="kpiParticipation" class="text-3xl font-extrabold text-slate-900">-</strong>
+          <small id="kpiParticipationDelta" class="mb-1 font-medium"></small>
+        </div>
+      </article>
 
-<article class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative
-overflow-hidden group hover:shadow-md transition-shadow">
-<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-<i data-lucide="pie-chart" class="w-16 h-16"></i>
-</div>
-<span class="text-sm font-semibold text-slate-500 mb-1 block">Participação</span>
-<div class="flex items-end gap-3">
-<strong id="kpiParticipation" class="text-3xl font-extrabold text-slate-900">-</strong>
-<small id="kpiParticipationDelta" class="mb-1 font-medium"></small>
-</div>
-</article>
+      <article class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <i data-lucide="target" class="w-16 h-16 text-blue-500"></i>
+        </div>
+        <span class="text-sm font-semibold text-slate-500 mb-1 block">Acertos Gerais</span>
+        <div class="flex items-end gap-3">
+          <strong id="kpiScore" class="text-3xl font-extrabold text-blue-600">-</strong>
+          <small id="kpiScoreDelta" class="mb-1 font-medium"></small>
+        </div>
+      </article>
 
-<article class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative
-overflow-hidden group hover:shadow-md transition-shadow">
-<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-<i data-lucide="target" class="w-16 h-16 text-blue-500"></i>
-</div>
-<span class="text-sm font-semibold text-slate-500 mb-1 block">Acertos Gerais</span>
-<div class="flex items-end gap-3">
-<strong id="kpiScore" class="text-3xl font-extrabold text-blue-600">-</strong>
-<small id="kpiScoreDelta" class="mb-1 font-medium"></small>
-</div>
-</article>
+      <article class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+          <i data-lucide="award" class="w-16 h-16 text-emerald-500"></i>
+        </div>
+        <span class="text-sm font-semibold text-slate-500 mb-1 block">Melhor Componente</span>
+        <div class="flex items-end gap-3">
+          <strong id="kpiBest" class="text-3xl font-extrabold text-emerald-600 truncate">-</strong>
+          <small id="kpiBestDelta" class="mb-1 font-medium"></small>
+        </div>
+      </article>
+    </section>
 
-<article class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative
-overflow-hidden group hover:shadow-md transition-shadow">
-<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Gráfico (Chart.js) -->
+      <section class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+        <div class="mb-4">
+          <h2 id="chartTitle" class="text-lg font-bold text-slate-900">Desempenho por Componente</h2>
+          <p id="chartSubtitle" class="text-sm text-slate-500">Comparação entre bimestres</p>
+        </div>
+        <div class="relative w-full h-[400px] flex-1">
+          <canvas id="subjectChart" aria-label="Gráfico por componente curricular"></canvas>
+        </div>
+      </section>
 
-<i data-lucide="award" class="w-16 h-16 text-emerald-500"></i>
-</div>
-<span class="text-sm font-semibold text-slate-500 mb-1 block">Melhor Componente</span>
-<div class="flex items-end gap-3">
-<strong id="kpiBest" class="text-3xl font-extrabold text-emerald-600 truncate">-</strong>
-<small id="kpiBestDelta" class="mb-1 font-medium"></small>
-</div>
-</article>
-</section>
+      <!-- Tabela de Detalhamento -->
+      <section class="bg-white p-0 rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+        <div class="p-5 border-b border-slate-200 bg-slate-50/50">
+          <h2 class="text-lg font-bold text-slate-900">Detalhamento</h2>
+          <p id="tableSubtitle" class="text-sm text-slate-500">Indicadores por componente</p>
+        </div>
+        <div class="table-container overflow-x-auto flex-1">
+          <table class="w-full text-sm text-left text-slate-600">
+            <thead id="detailHead" class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 shadow-sm">
+            </thead>
+            <tbody id="detailBody" class="divide-y divide-slate-200">
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<section class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex
-flex-col">
-<div class="mb-4">
-<h2 id="chartTitle" class="text-lg font-bold text-slate-900">Desempenho por
-Componente</h2>
-<p id="chartSubtitle" class="text-sm text-slate-500">Comparação entre bimestres</p>
-</div>
-<div class="relative w-full h-[400px] flex-1">
-<canvas id="subjectChart"></canvas>
-</div>
-</section>
+    </div>
+  </main>
 
-<section class="bg-white p-0 rounded-2xl shadow-sm border border-slate-200 flex flex-col
-overflow-hidden">
-<div class="p-5 border-b border-slate-200 bg-slate-50/50">
-<h2 class="text-lg font-bold text-slate-900">Detalhamento</h2>
-<p id="tableSubtitle" class="text-sm text-slate-500">Indicadores por componente</p>
-</div>
-<div class="table-container overflow-x-auto flex-1">
-<table class="w-full text-sm text-left text-slate-600">
-<thead id="detailHead" class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0
-shadow-sm">
-</thead>
-<tbody id="detailBody" class="divide-y divide-slate-200">
-</tbody>
+  <!-- ========================================================================= -->
+  <!-- IMPORTAÇÃO DO ARQUIVO EXTERNO COM SEUS DADOS ORIGINAIS -->
+  <!-- Mantenha o arquivo "data.js" na mesma pasta que este HTML -->
+  <script src="data.js"></script>
+  <!-- ========================================================================= -->
 
-</table>
-</div>
-</section>
-</div>
-</main>
-<!-- IMPORTAÇÃO DOS DADOS ORIGINAIS -->
-<script src="data.js"></script>
-<script>
-lucide.createIcons();
-let chartInstance = null;
-function sanitizeData(data) {
-if (!data || !data.metadata) return data;
-data.metadata.componentes = data.metadata.componentes.map(c => c === "F?S" ? "FÍS" : c);
-// O seu arquivo data.js usa "resultados", garantindo que leia o campo correto.
-if (data.resultados) {
-data.resultados.forEach(r => {
-if (r.componentes && r.componentes["F?S"] !== undefined) {
-r.componentes["FÍS"] = r.componentes["F?S"];
-delete r.componentes["F?S"];
-}
-});
-}
-return data;
-}
-const dataset = sanitizeData(window.PROVA_PAULISTA_DATA);
-const subjects = dataset.metadata.componentes;
-const els = {
-schoolSelect: document.querySelector("#schoolSelect"),
-modeInputs: document.querySelectorAll("input[name='mode']"),
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      
+      // 1. Inicia os ícones com proteção contra bloqueios de rede
+      function initIcons() {
+        try {
+          if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+          }
+        } catch (e) {
+          console.warn("Ícones não puderam ser carregados.");
+        }
+      }
+      initIcons();
 
-summaryPill: document.querySelector("#summaryPill"),
-kpis: {
-students: document.querySelector("#kpiStudents"),
-studentsDelta: document.querySelector("#kpiStudentsDelta"),
-participation: document.querySelector("#kpiParticipation"),
-participationDelta: document.querySelector("#kpiParticipationDelta"),
-score: document.querySelector("#kpiScore"),
-scoreDelta: document.querySelector("#kpiScoreDelta"),
-best: document.querySelector("#kpiBest"),
-bestDelta: document.querySelector("#kpiBestDelta"),
-},
-chart: {
-title: document.querySelector("#chartTitle"),
-subtitle: document.querySelector("#chartSubtitle"),
-canvas: document.querySelector("#subjectChart")
-},
-table: {
-head: document.querySelector("#detailHead"),
-body: document.querySelector("#detailBody"),
-subtitle: document.querySelector("#tableSubtitle")
-}
-};
-function formatPercent(value) {
-if (value === null || value === undefined || Number.isNaN(value)) return "-";
-return (value * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits:
-1 }) + "%";
-}
-function formatDelta(diff, isPercent = true) {
-if (diff === null || diff === undefined || Number.isNaN(diff)) return "";
-const val = isPercent ? diff * 100 : diff;
-const formatted = Math.abs(val).toLocaleString("pt-BR", { minimumFractionDigits: 1,
-maximumFractionDigits: 1 });
-if (val > 0) return `<span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-xs
+      // 2. Proteção: Verifica se o data.js foi lido corretamente
+      if (typeof window.PROVA_PAULISTA_DATA === 'undefined') {
+        document.querySelector("main").innerHTML = `
+          <div class="bg-red-50 border border-red-200 p-8 rounded-2xl text-center shadow-sm">
+            <h2 class="text-2xl font-bold text-red-700 mb-2">Erro de Leitura dos Dados</h2>
+            <p class="text-red-600 mb-4">O arquivo <strong>data.js</strong> não foi encontrado ou possui um erro de digitação/sintaxe internamente.</p>
+            <p class="text-slate-600 text-sm">Certifique-se de que o arquivo <code>data.js</code> está salvo na mesma pasta que este arquivo HTML.</p>
+          </div>
+        `;
+        return;
+      }
 
-flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i>+${formatted}${isPercent
-? 'pp' : ''}</span>`;
-if (val < 0) return `<span class="text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs flex
-items-center gap-1"><i data-lucide="trending-down" class="w-3 h-3"></i>-${formatted}${isPercent ?
-'pp' : ''}</span>`;
-return `<span class="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full text-xs">0</span>`;
-}
-function getSelectedMode() {
-return document.querySelector("input[name='mode']:checked").value;
-}
-function aggregateRecords(bimestre) {
-const records = dataset.resultados.filter(r => r.bimestre == bimestre);
-if (records.length === 0) return null;
-let totalAlunos = 0;
-let sumPart = 0;
-let sumAcertos = 0;
-let compAcertos = {};
-let compAlunos = {};
-records.forEach(r => {
-totalAlunos += r.totalAlunos;
-sumPart += (r.participacao * r.totalAlunos);
-sumAcertos += (r.acertos * r.totalAlunos);
-Object.entries(r.componentes).forEach(([comp, val]) => {
-if (val !== null) {
-compAcertos[comp] = (compAcertos[comp] || 0) + (val * r.totalAlunos);
-compAlunos[comp] = (compAlunos[comp] || 0) + r.totalAlunos;
-}
-});
-});
-const result = {
+      const rawData = window.PROVA_PAULISTA_DATA;
 
-bimestre,
-totalAlunos,
-participacao: totalAlunos > 0 ? sumPart / totalAlunos : 0,
-acertos: totalAlunos > 0 ? sumAcertos / totalAlunos : 0,
-componentes: {}
-};
-subjects.forEach(comp => {
-result.componentes[comp] = compAlunos[comp] ? (compAcertos[comp] / compAlunos[comp]) :
-null;
-});
-return result;
-}
-function getCurrentData() {
-const school = els.schoolSelect.value;
-if (school === "__all__") {
-return { bim1: aggregateRecords(1), bim2: aggregateRecords(2) };
-} else {
-return {
-bim1: dataset.resultados.find(r => r.escola === school && r.bimestre === 1),
-bim2: dataset.resultados.find(r => r.escola === school && r.bimestre === 2)
-};
-}
-}
-function getBestComponent(record) {
-if (!record || !record.componentes) return null;
-let best = { name: "-", value: -1 };
-Object.entries(record.componentes).forEach(([comp, val]) => {
-if (val !== null && val > best.value) {
-best = { name: comp, value: val };
-}
-});
-return best;
+      // 3. Função Inteligente: Descobre o nome do seu array de dados automaticamente
+      function getRecordsArray(data) {
+        if (data.registros) return data.registros;
+        if (data.resultados) return data.resultados;
+        if (data.dados) return data.dados;
+        // Se for outro nome qualquer, procura o primeiro array disponível
+        const key = Object.keys(data).find(k => k !== 'metadata' && k !== 'escolas' && Array.isArray(data[k]));
+        return key ? data[key] : [];
+      }
 
-}
-function renderKPIs(data, mode) {
-const d1 = data.bim1;
-const d2 = data.bim2;
-const active = mode === "1" ? d1 : (mode === "2" ? d2 : d2);
-if (!active) {
-Object.values(els.kpis).forEach(el => el.innerHTML = "-");
-return;
-}
-els.kpis.students.textContent = active.totalAlunos.toLocaleString("pt-BR");
-els.kpis.participation.textContent = formatPercent(active.participacao);
-els.kpis.score.textContent = formatPercent(active.acertos);
-const best = getBestComponent(active);
-els.kpis.best.textContent = best.name;
-els.kpis.bestDelta.innerHTML = formatPercent(best.value);
-if (mode === "compare" && d1 && d2) {
-els.kpis.studentsDelta.innerHTML = formatDelta(d2.totalAlunos - d1.totalAlunos, false);
-els.kpis.participationDelta.innerHTML = formatDelta(d2.participacao - d1.participacao);
-els.kpis.scoreDelta.innerHTML = formatDelta(d2.acertos - d1.acertos);
-const bestD1 = getBestComponent(d1);
-els.kpis.bestDelta.innerHTML += ` <span class="text-slate-400 text-xs font-normal">(era
-${bestD1.name}: ${formatPercent(bestD1.value)})</span>`;
-} else {
-els.kpis.studentsDelta.innerHTML = "";
-els.kpis.participationDelta.innerHTML = "";
-els.kpis.scoreDelta.innerHTML = "";
-}
-lucide.createIcons();
-}
-function renderChart(data, mode) {
+      // 4. Limpeza e correção automática do "F?S" para "FÍS"
+      function sanitizeData(data) {
+        if (!data || !data.metadata) return data;
+        
+        // Corrige a lista mestre
+        data.metadata.componentes = data.metadata.componentes.map(c => c === "F?S" ? "FÍS" : c);
+        
+        // Corrige os registros
+        const records = getRecordsArray(data);
+        if (records) {
+          records.forEach(r => {
+            if (r.componentes && r.componentes["F?S"] !== undefined) {
+              r.componentes["FÍS"] = r.componentes["F?S"];
+              delete r.componentes["F?S"];
+            }
+          });
+        }
+        return data;
+      }
 
-if (chartInstance) chartInstance.destroy();
-let datasets = [];
-const labels = subjects;
-if (mode === "compare" && data.bim1 && data.bim2) {
-els.chart.title.textContent = "Desempenho Comparativo";
-els.chart.subtitle.textContent = "Acertos 1o Bimestre vs 2o Bimestre";
-datasets = [
-{
-label: '1o Bimestre',
-data: subjects.map(s => data.bim1.componentes[s] !== null ? data.bim1.componentes[s] *
-100 : null),
-backgroundColor: '#94a3b8',
-borderRadius: 4,
-},
-{
-label: '2o Bimestre',
-data: subjects.map(s => data.bim2.componentes[s] !== null ? data.bim2.componentes[s] *
-100 : null),
-backgroundColor: '#2563eb',
-borderRadius: 4,
-}
-];
-} else {
-const active = mode === "1" ? data.bim1 : data.bim2;
-els.chart.title.textContent = `Desempenho - ${mode}o Bimestre`;
-els.chart.subtitle.textContent = "Acertos por componente curricular";
-if (active) {
-datasets = [{
-label: `${mode}o Bimestre`,
-data: subjects.map(s => active.componentes[s] !== null ? active.componentes[s] * 100 :
-null),
-backgroundColor: mode === '1' ? '#94a3b8' : '#2563eb',
-borderRadius: 4,
-}];
-}
+      const dataset = sanitizeData(rawData);
+      const subjects = dataset.metadata.componentes;
+      const recordsList = getRecordsArray(dataset); // Usa a lista detectada de forma inteligente
 
-}
-chartInstance = new Chart(els.chart.canvas, {
-type: 'bar',
-data: { labels, datasets },
-options: {
-responsive: true,
-maintainAspectRatio: false,
-plugins: {
-legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter' } } },
-tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw ? ctx.raw.toFixed(1) + '%' :
-'-'}` } }
-},
-scales: {
-y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
-x: { grid: { display: false } }
-}
-}
-});
-}
-function renderTable(data, mode) {
-if (mode === "compare" && data.bim1 && data.bim2) {
-els.table.subtitle.textContent = "Comparação detalhada 1o e 2o bimestres";
-els.table.head.innerHTML = `
-<tr>
-<th class="px-4 py-3 bg-slate-50 border-b">Componente</th>
-<th class="px-4 py-3 bg-slate-50 border-b text-right">1o Bim</th>
-<th class="px-4 py-3 bg-slate-50 border-b text-right">2o Bim</th>
-<th class="px-4 py-3 bg-slate-50 border-b text-right">Evolução</th>
-</tr>`;
-els.table.body.innerHTML = subjects.map(sub => {
-const v1 = data.bim1.componentes[sub];
-const v2 = data.bim2.componentes[sub];
-const diff = (v1 !== null && v2 !== null) ? (v2 - v1) : null;
-return `
+      // 5. Mapeamento de Elementos do DOM
+      const els = {
+        schoolSelect: document.querySelector("#schoolSelect"),
+        modeInputs: document.querySelectorAll("input[name='mode']"),
+        summaryPill: document.querySelector("#summaryPill"),
+        
+        kpis: {
+          students: document.querySelector("#kpiStudents"),
+          studentsDelta: document.querySelector("#kpiStudentsDelta"),
+          participation: document.querySelector("#kpiParticipation"),
+          participationDelta: document.querySelector("#kpiParticipationDelta"),
+          score: document.querySelector("#kpiScore"),
+          scoreDelta: document.querySelector("#kpiScoreDelta"),
+          best: document.querySelector("#kpiBest"),
+          bestDelta: document.querySelector("#kpiBestDelta"),
+        },
+        
+        chart: {
+          title: document.querySelector("#chartTitle"),
+          subtitle: document.querySelector("#chartSubtitle"),
+          canvas: document.querySelector("#subjectChart")
+        },
+        
+        table: {
+          head: document.querySelector("#detailHead"),
+          body: document.querySelector("#detailBody"),
+          subtitle: document.querySelector("#tableSubtitle")
+        }
+      };
 
-<tr class="hover:bg-slate-50/50 transition-colors">
-<td class="px-4 py-3 font-semibold text-slate-800">${sub}</td>
-<td class="px-4 py-3 text-right">${formatPercent(v1)}</td>
-<td class="px-4 py-3 text-right">${formatPercent(v2)}</td>
-<td class="px-4 py-3 flex justify-end">${formatDelta(diff)}</td>
-</tr>`;
-}).join("");
-} else {
-const active = mode === "1" ? data.bim1 : data.bim2;
-els.table.subtitle.textContent = `Indicadores do ${mode}o bimestre`;
-els.table.head.innerHTML = `
-<tr>
-<th class="px-4 py-3 bg-slate-50 border-b">Componente</th>
-<th class="px-4 py-3 bg-slate-50 border-b text-right">Acertos</th>
-</tr>`;
-if (active) {
-els.table.body.innerHTML = subjects.map(sub => `
-<tr class="hover:bg-slate-50/50 transition-colors">
-<td class="px-4 py-3 font-semibold text-slate-800">${sub}</td>
-<td class="px-4 py-3 text-right">${formatPercent(active.componentes[sub])}</td>
-</tr>`).join("");
-} else {
-els.table.body.innerHTML = "<tr><td colspan='2' class='text-center py-4'>Sem
-dados</td></tr>";
-}
-}
-lucide.createIcons();
-}
-function update() {
-const mode = getSelectedMode();
-const data = getCurrentData();
-const label = els.schoolSelect.value === "__all__"
-? `${dataset.escolas.length} escolas selecionadas`
-: dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
-els.summaryPill.textContent = label;
+      let chartInstance = null;
 
-renderKPIs(data, mode);
-renderChart(data, mode);
-renderTable(data, mode);
-}
-function init() {
-els.schoolSelect.innerHTML = `<option value="__all__">Visão Geral (Todas as
-escolas)</option>` +
-dataset.escolas.map(s => `<option value="${s.nome}">${s.label}</option>`).join("");
-els.schoolSelect.addEventListener("change", update);
-els.modeInputs.forEach(input => input.addEventListener("change", update));
-update();
-}
-document.addEventListener("DOMContentLoaded", init);
-</script>
+      // Utilitários
+      function formatPercent(value) {
+        if (value === null || value === undefined || Number.isNaN(value)) return "-";
+        return (value * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+      }
+
+      function formatDelta(diff, isPercent = true) {
+        if (diff === null || diff === undefined || Number.isNaN(diff)) return "";
+        const val = isPercent ? diff * 100 : diff;
+        const formatted = Math.abs(val).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        
+        if (val > 0) return `<span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i>+${formatted}${isPercent ? 'pp' : ''}</span>`;
+        if (val < 0) return `<span class="text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"><i data-lucide="trending-down" class="w-3 h-3"></i>-${formatted}${isPercent ? 'pp' : ''}</span>`;
+        return `<span class="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full text-xs">0</span>`;
+      }
+
+      function getSelectedMode() {
+        const checked = document.querySelector("input[name='mode']:checked");
+        return checked ? checked.value : "compare";
+      }
+
+      // Lógica de cálculo
+      function aggregateRecords(bimestre) {
+        const records = recordsList.filter(r => r.bimestre == bimestre);
+        if (records.length === 0) return null;
+
+        let totalAlunos = 0;
+        let sumPart = 0;
+        let sumAcertos = 0;
+        let compAcertos = {};
+        let compAlunos = {};
+
+        records.forEach(r => {
+          totalAlunos += r.totalAlunos;
+          sumPart += (r.participacao * r.totalAlunos);
+          sumAcertos += (r.acertos * r.totalAlunos);
+
+          Object.entries(r.componentes).forEach(([comp, val]) => {
+            if (val !== null) {
+              compAcertos[comp] = (compAcertos[comp] || 0) + (val * r.totalAlunos);
+              compAlunos[comp] = (compAlunos[comp] || 0) + r.totalAlunos;
+            }
+          });
+        });
+
+        const result = {
+          bimestre,
+          totalAlunos,
+          participacao: totalAlunos > 0 ? sumPart / totalAlunos : 0,
+          acertos: totalAlunos > 0 ? sumAcertos / totalAlunos : 0,
+          componentes: {}
+        };
+
+        subjects.forEach(comp => {
+          result.componentes[comp] = compAlunos[comp] ? (compAcertos[comp] / compAlunos[comp]) : null;
+        });
+
+        return result;
+      }
+
+      function getCurrentData() {
+        const school = els.schoolSelect.value;
+        if (school === "__all__") {
+          return { bim1: aggregateRecords(1), bim2: aggregateRecords(2) };
+        } else {
+          return {
+            bim1: recordsList.find(r => r.escola === school && r.bimestre === 1),
+            bim2: recordsList.find(r => r.escola === school && r.bimestre === 2)
+          };
+        }
+      }
+
+      function getBestComponent(record) {
+        if (!record || !record.componentes) return null;
+        let best = { name: "-", value: -1 };
+        Object.entries(record.componentes).forEach(([comp, val]) => {
+          if (val !== null && val > best.value) {
+            best = { name: comp, value: val };
+          }
+        });
+        return best;
+      }
+
+      // Renderizações da UI
+      function renderKPIs(data, mode) {
+        const d1 = data.bim1;
+        const d2 = data.bim2;
+        const active = mode === "1" ? d1 : (mode === "2" ? d2 : d2);
+
+        if (!active) {
+          Object.values(els.kpis).forEach(el => el.innerHTML = "-");
+          return;
+        }
+
+        els.kpis.students.textContent = active.totalAlunos.toLocaleString("pt-BR");
+        els.kpis.participation.textContent = formatPercent(active.participacao);
+        els.kpis.score.textContent = formatPercent(active.acertos);
+        
+        const best = getBestComponent(active);
+        els.kpis.best.textContent = best.name;
+        els.kpis.bestDelta.innerHTML = formatPercent(best.value);
+
+        if (mode === "compare" && d1 && d2) {
+          els.kpis.studentsDelta.innerHTML = formatDelta(d2.totalAlunos - d1.totalAlunos, false);
+          els.kpis.participationDelta.innerHTML = formatDelta(d2.participacao - d1.participacao);
+          els.kpis.scoreDelta.innerHTML = formatDelta(d2.acertos - d1.acertos);
+          
+          const bestD1 = getBestComponent(d1);
+          els.kpis.bestDelta.innerHTML += ` <span class="text-slate-400 text-xs font-normal ml-1">(era ${bestD1.name}: ${formatPercent(bestD1.value)})</span>`;
+        } else {
+          els.kpis.studentsDelta.innerHTML = "";
+          els.kpis.participationDelta.innerHTML = "";
+          els.kpis.scoreDelta.innerHTML = "";
+        }
+      }
+
+      function renderChart(data, mode) {
+        // Trava de proteção caso o Chart.js não tenha carregado
+        if (typeof Chart === 'undefined') {
+          els.chart.canvas.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400 text-sm">O gráfico não pôde ser carregado (Verifique a rede).</div>';
+          return;
+        }
+
+        if (chartInstance) chartInstance.destroy();
+
+        let datasets = [];
+        const labels = subjects;
+
+        if (mode === "compare" && data.bim1 && data.bim2) {
+          els.chart.title.textContent = "Desempenho Comparativo";
+          els.chart.subtitle.textContent = "Acertos 1º Bimestre vs 2º Bimestre";
+          datasets = [
+            {
+              label: '1º Bimestre',
+              data: subjects.map(s => data.bim1.componentes[s] !== null ? data.bim1.componentes[s] * 100 : null),
+              backgroundColor: '#94a3b8',
+              borderRadius: 4,
+            },
+            {
+              label: '2º Bimestre',
+              data: subjects.map(s => data.bim2.componentes[s] !== null ? data.bim2.componentes[s] * 100 : null),
+              backgroundColor: '#2563eb',
+              borderRadius: 4,
+            }
+          ];
+        } else {
+          const active = mode === "1" ? data.bim1 : data.bim2;
+          els.chart.title.textContent = `Desempenho - ${mode}º Bimestre`;
+          els.chart.subtitle.textContent = "Acertos por componente curricular";
+          
+          if (active) {
+            datasets = [{
+              label: `${mode}º Bimestre`,
+              data: subjects.map(s => active.componentes[s] !== null ? active.componentes[s] * 100 : null),
+              backgroundColor: mode === '1' ? '#94a3b8' : '#2563eb',
+              borderRadius: 4,
+            }];
+          }
+        }
+
+        chartInstance = new Chart(els.chart.canvas, {
+          type: 'bar',
+          data: { labels, datasets },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter' } } },
+              tooltip: {
+                callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw ? ctx.raw.toFixed(1) + '%' : '-'}` }
+              }
+            },
+            scales: {
+              y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      function renderTable(data, mode) {
+        if (mode === "compare" && data.bim1 && data.bim2) {
+          els.table.subtitle.textContent = "Comparação detalhada 1º e 2º bimestres";
+          els.table.head.innerHTML = `
+            <tr>
+              <th class="px-4 py-3 bg-slate-50 border-b">Componente</th>
+              <th class="px-4 py-3 bg-slate-50 border-b text-right">1º Bim</th>
+              <th class="px-4 py-3 bg-slate-50 border-b text-right">2º Bim</th>
+              <th class="px-4 py-3 bg-slate-50 border-b text-right">Evolução</th>
+            </tr>`;
+          
+          els.table.body.innerHTML = subjects.map(sub => {
+            const v1 = data.bim1.componentes[sub];
+            const v2 = data.bim2.componentes[sub];
+            const diff = (v1 !== null && v2 !== null) ? (v2 - v1) : null;
+            
+            return `
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="px-4 py-3 font-semibold text-slate-800">${sub}</td>
+                <td class="px-4 py-3 text-right">${formatPercent(v1)}</td>
+                <td class="px-4 py-3 text-right">${formatPercent(v2)}</td>
+                <td class="px-4 py-3 flex justify-end">${formatDelta(diff)}</td>
+              </tr>`;
+          }).join("");
+        } else {
+          const active = mode === "1" ? data.bim1 : data.bim2;
+          els.table.subtitle.textContent = `Indicadores do ${mode}º bimestre`;
+          els.table.head.innerHTML = `
+            <tr>
+              <th class="px-4 py-3 bg-slate-50 border-b">Componente</th>
+              <th class="px-4 py-3 bg-slate-50 border-b text-right">Acertos</th>
+            </tr>`;
+          
+          if (active) {
+            els.table.body.innerHTML = subjects.map(sub => `
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <td class="px-4 py-3 font-semibold text-slate-800">${sub}</td>
+                <td class="px-4 py-3 text-right">${formatPercent(active.componentes[sub])}</td>
+              </tr>`).join("");
+          } else {
+            els.table.body.innerHTML = "<tr><td colspan='2' class='text-center py-4'>Sem dados</td></tr>";
+          }
+        }
+      }
+
+      function update() {
+        const mode = getSelectedMode();
+        const data = getCurrentData();
+        
+        const label = els.schoolSelect.value === "__all__" 
+          ? `${dataset.escolas.length} escolas conectadas` 
+          : dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
+        
+        els.summaryPill.textContent = label;
+
+        renderKPIs(data, mode);
+        renderChart(data, mode);
+        renderTable(data, mode);
+        initIcons(); // Atualiza os ícones após re-renderizar a tabela
+      }
+
+      function init() {
+        els.schoolSelect.innerHTML = `<option value="__all__">Visão Geral (Todas as escolas)</option>` + 
+          dataset.escolas.map(s => `<option value="${s.nome}">${s.label}</option>`).join("");
+
+        els.schoolSelect.addEventListener("change", update);
+        els.modeInputs.forEach(input => input.addEventListener("change", update));
+
+        update();
+      }
+
+      // Executa a aplicação
+      init();
+    });
+  </script>
 </body>
 </html>
