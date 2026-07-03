@@ -21,7 +21,11 @@
     .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
     .table-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
     
-   
+    /* Simples formatação para o output do markdown do Gemini */
+    .ai-content b, .ai-content strong { font-weight: 700; color: #1e293b; }
+    .ai-content p { margin-bottom: 0.75rem; }
+    .ai-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+    .ai-content li { margin-bottom: 0.25rem; }
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
@@ -124,7 +128,34 @@
       </article>
     </section>
 
-     </section> 
+    <!-- ✨ Integração IA Gemini ✨ -->
+    <section class="bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col gap-4">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i>
+        <h2 class="text-lg font-bold text-slate-900">Assistente Pedagógico IA</h2>
+      </div>
+      
+      <p class="text-sm text-slate-600">Utilize a inteligência artificial para analisar os dados visíveis no momento e gerar insights práticos para a coordenação.</p>
+      
+      <div class="flex flex-wrap gap-3">
+        <button id="btnAiSummary" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+          ✨ Analisar Desempenho
+        </button>
+        <button id="btnAiActionPlan" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <i data-lucide="list-todo" class="w-4 h-4"></i>
+          ✨ Plano de Ação (Matéria Crítica)
+        </button>
+      </div>
+
+      <!-- Caixa de Resposta da IA -->
+      <div id="aiOutputContainer" class="hidden mt-2 relative">
+        <div class="absolute top-3 right-3 text-indigo-200 animate-pulse">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </div>
+        <div id="aiOutputText" class="ai-content bg-white p-5 rounded-xl border border-indigo-100 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed shadow-inner min-h-[100px]"></div>
+      </div>
+    </section>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
@@ -234,27 +265,39 @@
       const subjects = dataset.metadata.componentes;
       const recordsList = getRecordsArray(dataset);
 
-       // 4. Elementos do DOM
-     const els = {
+      // 4. Elementos do DOM
+      const els = {
         schoolSelect: document.querySelector("#schoolSelect"),
         modeInputs: document.querySelectorAll("input[name='mode']"),
         summaryPill: document.querySelector("#summaryPill"),
         kpis: {
           students: document.querySelector("#kpiStudents"),
+          studentsDelta: document.querySelector("#kpiStudentsDelta"),
           participation: document.querySelector("#kpiParticipation"),
+          participationDelta: document.querySelector("#kpiParticipationDelta"),
           score: document.querySelector("#kpiScore"),
-          best: document.querySelector("#kpiBest")
+          scoreDelta: document.querySelector("#kpiScoreDelta"),
+          best: document.querySelector("#kpiBest"),
+          bestDelta: document.querySelector("#kpiBestDelta"),
         },
         chart: {
           title: document.querySelector("#chartTitle"),
+          subtitle: document.querySelector("#chartSubtitle"),
           canvas: document.querySelector("#subjectChart")
         },
         table: {
           head: document.querySelector("#detailHead"),
-          body: document.querySelector("#detailBody")
+          body: document.querySelector("#detailBody"),
+          subtitle: document.querySelector("#tableSubtitle")
+        },
+        // IA Elements
+        ai: {
+          btnSummary: document.querySelector("#btnAiSummary"),
+          btnActionPlan: document.querySelector("#btnAiActionPlan"),
+          outputContainer: document.querySelector("#aiOutputContainer"),
+          outputText: document.querySelector("#aiOutputText")
         }
       };
-
 
       let chartInstance = null;
 
@@ -379,7 +422,7 @@
           els.chart.title.textContent = "Desempenho Comparativo";
           els.chart.subtitle.textContent = "Acertos 1º Bimestre vs 2º Bimestre";
           datasets = [
-            { label: '1º Bimestre', data: subjects.map(s => data.bim1.componentes[s] !== null && data.bim1.componentes[s] !== undefined ? data.bim1.componentes[s] * 100 : null), backgroundColor: '#F72585', borderRadius: 4 },
+            { label: '1º Bimestre', data: subjects.map(s => data.bim1.componentes[s] !== null && data.bim1.componentes[s] !== undefined ? data.bim1.componentes[s] * 100 : null), backgroundColor: '#94a3b8', borderRadius: 4 },
             { label: '2º Bimestre', data: subjects.map(s => data.bim2.componentes[s] !== null && data.bim2.componentes[s] !== undefined ? data.bim2.componentes[s] * 100 : null), backgroundColor: '#4f46e5', borderRadius: 4 }
           ];
         } else {
@@ -422,24 +465,136 @@
         }
       }
 
-    
+      // ============================================================================
+      // INTEGRAÇÃO GEMINI API
+      // ============================================================================
+      async function fetchWithRetry(url, options, retries = 5) {
+        const delays = [1000, 2000, 4000, 8000, 16000];
+        for (let i = 0; i < retries; i++) {
+          try {
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(`Erro na API (Status ${response.status})`);
+            return await response.json();
+          } catch (error) {
+            if (i === retries - 1) throw error;
+            console.warn(`Falha na chamada (Tentativa ${i+1}). Retentando em ${delays[i]}ms...`);
+            await new Promise(res => setTimeout(res, delays[i]));
+          }
+        }
+      }
+
+      function parseMarkdown(text) {
+        let html = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
+        html = html.replace(/\*(.*?)\*/g, '<i>$1</i>'); 
+        const lines = html.split('\n');
+        let inList = false;
+        html = lines.map(line => {
+          if (line.trim().startsWith('* ')) {
+            const li = `<li>${line.replace('* ', '')}</li>`;
+            if (!inList) { inList = true; return `<ul>${li}`; }
+            return li;
+          } else {
+            if (inList) { inList = false; return `</ul><p>${line}</p>`; }
+            return line.trim() ? `<p>${line}</p>` : '';
+          }
+        }).join('');
+        if (inList) html += '</ul>';
+        return html;
+      }
+
+      async function askGemini(prompt) {
+        const apiKey = ""; 
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        
+        const payload = {
+          contents: [{ parts: [{ text: prompt }] }],
+          systemInstruction: { parts: [{ text: "Você é um assistente pedagógico especializado na análise de dados da educação do Estado de São Paulo. Responda de forma direta, encorajadora, estruturada e em português do Brasil." }] }
+        };
+
+        try {
+          const result = await fetchWithRetry(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          return result.candidates?.[0]?.content?.parts?.[0]?.text || "Ocorreu um erro ao gerar a análise.";
+        } catch (e) {
+          return "Desculpe, houve uma falha de conexão com a inteligência artificial. Tente novamente mais tarde.";
+        }
+      }
+
+      function getActiveDataForAI() {
+        const mode = getSelectedMode();
+        const data = getCurrentData();
+        return mode === "1" ? data.bim1 : (data.bim2 || data.bim1); 
+      }
+
+      function getTargetName() {
+        const s = els.schoolSelect.value;
+        return s === "__all__" ? "todas as escolas da regional (Visão Geral)" : s;
+      }
+
+      async function handleAiRequest(type) {
+        const activeData = getActiveDataForAI();
+        if (!activeData) return;
+
+        els.ai.btnSummary.disabled = true;
+        els.ai.btnActionPlan.disabled = true;
+        els.ai.outputContainer.classList.remove("hidden");
+        els.ai.outputText.innerHTML = '<div class="flex items-center gap-2 text-indigo-500"><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processando inteligência pedagógica...</div>';
+        initIcons();
+
+        const schoolName = getTargetName();
+        const best = getBestComponent(activeData);
+        const worst = getWorstComponent(activeData);
+        
+        let prompt = "";
+        
+        if (type === 'summary') {
+          prompt = `Atuando como coordenador pedagógico, escreva uma breve análise de desempenho (máximo de 2 parágrafos curtos) para os seguintes dados de ${schoolName}:
+          - Alunos Avaliados: ${activeData.totalAlunos}
+          - Taxa de Participação: ${formatPercent(activeData.participacao)}
+          - Média Geral de Acertos: ${formatPercent(activeData.acertos)}
+          - Ponto Forte (Melhor Matéria): ${best.name} com ${formatPercent(best.value)} de acertos
+          - Maior Dificuldade (Pior Matéria): ${worst.name} com apenas ${formatPercent(worst.value)} de acertos.
+          
+          Faça um elogio aos pontos positivos e destaque educadamente a necessidade de foco na matéria com dificuldade.`;
+        } else if (type === 'actionPlan') {
+          prompt = `Como especialista em educação, os alunos de ${schoolName} tiveram apenas ${formatPercent(worst.value)} de acertos na disciplina de ${worst.name}. 
+          
+          Crie um plano de ação rápido e prático com exatamente 3 tópicos (em formato de lista, bullet points) com sugestões de estratégias metodológicas ativas para os professores de ${worst.name} aplicarem em sala de aula visando melhorar a aprendizagem. Seja direto ao ponto.`;
+        }
+
+        const responseText = await askGemini(prompt);
+        
+        els.ai.outputText.innerHTML = parseMarkdown(responseText);
+        
+        els.ai.btnSummary.disabled = false;
+        els.ai.btnActionPlan.disabled = false;
+      }
+
+      els.ai.btnSummary.addEventListener('click', () => handleAiRequest('summary'));
+      els.ai.btnActionPlan.addEventListener('click', () => handleAiRequest('actionPlan'));
+
       // ============================================================================
       // CORE UPDATE & INIT
       // ============================================================================
       function update() {
-  const mode = getSelectedMode();
-  const data = getCurrentData();
-  const label = els.schoolSelect.value === "__all__" ? `${dataset.escolas.length} escolas conectadas` : dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
-  
-  els.summaryPill.textContent = label;
+        const mode = getSelectedMode();
+        const data = getCurrentData();
+        const label = els.schoolSelect.value === "__all__" ? `${dataset.escolas.length} escolas conectadas` : dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
+        els.summaryPill.textContent = label;
 
-  renderKPIs(data, mode);
-  renderChart(data, mode);
-  renderTable(data, mode);
-            
-  initIcons();
-}
-
+        renderKPIs(data, mode);
+        renderChart(data, mode);
+        renderTable(data, mode);
+        
+        els.ai.outputContainer.classList.add("hidden");
+        els.ai.outputText.innerHTML = "";
+        
+        initIcons();
+      }
 
       function init() {
         els.schoolSelect.innerHTML = `<option value="__all__">Visão Geral (Todas as escolas)</option>` + 
