@@ -238,39 +238,26 @@
       const subjects = dataset.metadata.componentes;
       const recordsList = getRecordsArray(dataset);
 
-      // 4. Elementos do DOM
+       // 4. Elementos do DOM
       const els = {
         schoolSelect: document.querySelector("#schoolSelect"),
         modeInputs: document.querySelectorAll("input[name='mode']"),
         summaryPill: document.querySelector("#summaryPill"),
         kpis: {
           students: document.querySelector("#kpiStudents"),
-          studentsDelta: document.querySelector("#kpiStudentsDelta"),
-          participation: document.querySelector("#kpiParticipation"),
-          participationDelta: document.querySelector("#kpiParticipationDelta"),
-          score: document.querySelector("#kpiScore"),
-          scoreDelta: document.querySelector("#kpiScoreDelta"),
-          best: document.querySelector("#kpiBest"),
-          bestDelta: document.querySelector("#kpiBestDelta"),
+          // ... outros KPIs ...
         },
         chart: {
           title: document.querySelector("#chartTitle"),
-          subtitle: document.querySelector("#chartSubtitle"),
-          canvas: document.querySelector("#subjectChart")
+          // ... outros campos do gráfico ...
         },
         table: {
           head: document.querySelector("#detailHead"),
           body: document.querySelector("#detailBody"),
           subtitle: document.querySelector("#tableSubtitle")
-        },
-        // IA Elements
-        ai: {
-          btnSummary: document.querySelector("#btnAiSummary"),
-          btnActionPlan: document.querySelector("#btnAiActionPlan"),
-          outputContainer: document.querySelector("#aiOutputContainer"),
-          outputText: document.querySelector("#aiOutputText")
         }
       };
+
 
       let chartInstance = null;
 
