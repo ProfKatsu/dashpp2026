@@ -620,27 +620,34 @@
 function gerarPDF() {
   const elemento = document.querySelector('main');
   
-  // Captura as seções do gráfico e da tabela para isolá-las
+  // Captura as secções do gráfico e da tabela para isolá-las
   const chartSection = document.getElementById('subjectChart').closest('section');
   const tableSection = document.getElementById('detailBody').closest('section');
   const containerGrid = chartSection.parentElement;
   
   // 1. Guarda o visual original do seu painel
   const estiloOriginal = elemento.style.cssText;
+  const classesOriginais = elemento.className;
   const classesGridOriginais = containerGrid.className;
+  const classesChartOriginais = chartSection.className;
+  const classesTableOriginais = tableSection.className;
   
-  // 2. Prepara o layout (largura fixa em 1200px para manter o design de computador)
+  // 2. O SEGREDO CONTRA O CORTE LATERAL:
+  // Fazer scroll para o topo para evitar que a captura comece a meio da página
+  window.scrollTo(0, 0);
+  
+  // Removemos o 'mx-auto' (centrado) e forçamos o alinhamento à esquerda
+  elemento.className = "p-8 flex flex-col gap-6 bg-white";
   elemento.style.width = '1200px'; 
-  elemento.style.maxWidth = '1200px';
+  elemento.style.maxWidth = 'none';
+  elemento.style.margin = '0';
   
-  // Desfaz a grade (grid) que coloca gráfico e tabela lado a lado
-  containerGrid.className = "flex flex-col gap-6";
+  // 3. Prepara as quebras de página (Força os blocos a ocuparem 100% da largura)
+  containerGrid.className = "block w-full"; // Remove a grade
+  chartSection.className = "block w-full mb-8 quebra-pagina";
+  tableSection.className = "block w-full quebra-pagina";
   
-  // Adiciona uma classe temporária que forçará a quebra de página
-  chartSection.classList.add('quebra-pagina');
-  tableSection.classList.add('quebra-pagina');
-  
-  // 3. Configura o PDF com regras de quebra de página (pagebreak)
+  // 4. Configura o PDF
   const opt = {
     margin:       10,
     filename:     'Relatorio_Prova_Paulista_Paginado.pdf',
@@ -649,18 +656,22 @@ function gerarPDF() {
       scale: 2, 
       useCORS: true, 
       windowWidth: 1200,
-      scrollY: 0
+      scrollX: 0,
+      scrollY: 0,
+      x: 0, // Força a câmara a colar no canto esquerdo
+      y: 0
     },
     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-    pagebreak:    { before: '.quebra-pagina' } // A mágica acontece aqui!
+    pagebreak:    { mode: 'css', before: '.quebra-pagina' }
   };
 
-  // 4. Gera o PDF e restaura o ecrã do utilizador instantaneamente
+  // 5. Gera o PDF e restaura o ecrã do utilizador instantaneamente
   html2pdf().set(opt).from(elemento).save().then(() => {
     elemento.style.cssText = estiloOriginal;
+    elemento.className = classesOriginais;
     containerGrid.className = classesGridOriginais;
-    chartSection.classList.remove('quebra-pagina');
-    tableSection.classList.remove('quebra-pagina');
+    chartSection.className = classesChartOriginais;
+    tableSection.className = classesTableOriginais;
   });
 }
 
