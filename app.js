@@ -24,7 +24,7 @@ const els = {
 };
 
 function percent(value) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "-";
+  if (value === null || value === undefined || Number.isNaN(value) || value === 0) return "-";
   return value.toLocaleString("pt-BR", {
     style: "percent",
     minimumFractionDigits: 1,
@@ -55,9 +55,15 @@ function recordsForSchool(schoolName) {
     .sort((a, b) => a.bimestre - b.bimestre);
 }
 
+// CORREÇÃO: Função de média atualizada para ignorar null, NaN, e zero (prova não realizada)
 function average(records, getter) {
-  const values = records.map(getter).filter((value) => value !== null && value !== undefined);
-  if (!values.length) return null;
+  const values = records.map(getter).filter((value) => 
+    value !== null && 
+    value !== undefined && 
+    !Number.isNaN(value) && 
+    value > 0 // Considera apenas valores reais positivos
+  );
+  if (values.length === 0) return null;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
@@ -90,9 +96,10 @@ function currentRecords() {
 }
 
 function bestSubject(record) {
+  if (!record || !record.componentes) return null;
   const ranked = subjects
     .map((subject) => ({ subject, value: record.componentes[subject] }))
-    .filter((item) => item.value && item.value > 0)
+    .filter((item) => item.value !== null && item.value > 0)
     .sort((a, b) => b.value - a.value);
   return ranked[0] || null;
 }
@@ -100,7 +107,7 @@ function bestSubject(record) {
 function setDelta(el, value, suffix = "") {
   el.className = "";
   if (value === null || value === undefined || Number.isNaN(value)) {
-    el.textContent = "";
+    el.textContent = "-";
     return;
   }
   el.textContent = `${points(value)}${suffix}`;
@@ -112,6 +119,8 @@ function renderKpis(records, mode) {
   const first = records.find((item) => item.bimestre === 1);
   const second = records.find((item) => item.bimestre === 2);
   const active = mode === "1" ? first : second;
+
+  if (!active) return; // Proteção se não houver dados
 
   if (mode !== "compare") {
     const best = bestSubject(active);
@@ -136,11 +145,18 @@ function renderKpis(records, mode) {
   const studentDiff = second.totalAlunos - first.totalAlunos;
   els.studentsDelta.className = studentDiff >= 0 ? "delta-up" : "delta-down";
   els.studentsDelta.textContent = `${studentDiff >= 0 ? "+" : ""}${integer(studentDiff)} alunos`;
-  setDelta(els.participationDelta, second.participacao - first.participacao);
-  setDelta(els.scoreDelta, second.acertos - first.acertos);
+  
+  // Tratamento de segurança para cálculos de delta
+  const partDiff = (second.participacao && first.participacao) ? second.participacao - first.participacao : null;
+  const acertosDiff = (second.acertos && first.acertos) ? second.acertos - first.acertos : null;
+  
+  setDelta(els.participationDelta, partDiff);
+  setDelta(els.scoreDelta, acertosDiff);
   setDelta(
     els.bestDelta,
-    best ? second.componentes[best.subject] - first.componentes[best.subject] : null,
+    (best && second.componentes[best.subject] && first.componentes[best.subject]) 
+        ? second.componentes[best.subject] - first.componentes[best.subject] 
+        : null,
     best ? ` em ${best.subject}` : ""
   );
 }
@@ -170,6 +186,10 @@ function renderChart(records, mode) {
   els.chart.innerHTML = "";
 
   subjects.forEach((subject) => {
+    const val1 = first ? first.componentes[subject] : 0;
+    const val2 = second ? second.componentes[subject] : 0;
+    const valActive = active ? active.componentes[subject] : 0;
+
     const row = document.createElement("div");
     row.className = "chart-row";
     const label = document.createElement("div");
@@ -181,8 +201,8 @@ function renderChart(records, mode) {
 
     if (mode === "compare") {
       [
-        ["bim1", first.componentes[subject]],
-        ["bim2", second.componentes[subject]],
+        ["bim1", val1],
+        ["bim2", val2],
       ].forEach(([className, value]) => {
         const track = document.createElement("div");
         track.className = "bar-track";
@@ -197,7 +217,7 @@ function renderChart(records, mode) {
       track.className = "bar-track";
       const bar = document.createElement("div");
       bar.className = "bar single";
-      bar.style.width = `${Math.max(0, active.componentes[subject] || 0) * 100}%`;
+      bar.style.width = `${Math.max(0, valActive || 0) * 100}%`;
       track.appendChild(bar);
       bars.appendChild(track);
     }
@@ -206,8 +226,8 @@ function renderChart(records, mode) {
     value.className = "value";
     value.textContent =
       mode === "compare"
-        ? points(second.componentes[subject] - first.componentes[subject])
-        : percent(active.componentes[subject]);
+        ? points( (val1 && val2) ? (val2 - val1) : null)
+        : percent(valActive);
 
     row.append(label, bars, value);
     els.chart.appendChild(row);
@@ -224,10 +244,15 @@ function renderTable(records, mode) {
     els.detailHead.innerHTML = "<tr><th>Componente</th><th>1º bimestre</th><th>2º bimestre</th><th>Variação</th></tr>";
     els.detailBody.innerHTML = subjects
       .map((subject) => {
-        const diff = second.componentes[subject] - first.componentes[subject];
-        const cls = diff > 0 ? "delta-up" : diff < 0 ? "delta-down" : "";
-        return `<tr><td>${subject}</td><td>${percent(first.componentes[subject])}</td><td>${percent(
-          second.componentes[subject]
+        const val1 = first ? first.componentes[subject] : null;
+        const val2 = second ? second.componentes[subject] : null;
+        
+        // Verifica se há valores válidos para calcular diferença
+        const diff = (val1 !== null && val2 !== null) ? (val2 - val1) : null;
+        const cls = diff !== null ? (diff > 0 ? "delta-up" : diff < 0 ? "delta-down" : "") : "";
+        
+        return `<tr><td>${subject}</td><td>${percent(val1)}</td><td>${percent(
+          val2
         )}</td><td class="${cls}">${points(diff)}</td></tr>`;
       })
       .join("");
@@ -237,13 +262,15 @@ function renderTable(records, mode) {
   els.tableSubtitle.textContent = `Indicadores do ${mode}º bimestre.`;
   els.detailHead.innerHTML = "<tr><th>Componente</th><th>Acertos</th></tr>";
   els.detailBody.innerHTML = subjects
-    .map((subject) => `<tr><td>${subject}</td><td>${percent(active.componentes[subject])}</td></tr>`)
+    .map((subject) => `<tr><td>${subject}</td><td>${percent(active ? active.componentes[subject] : null)}</td></tr>`)
     .join("");
 }
 
 function render() {
   const mode = selectedMode();
   const records = currentRecords();
+  if(!records || records.length === 0) return;
+
   const selectedLabel =
     schoolSelect.value === "__all__"
       ? "Todas as escolas"
