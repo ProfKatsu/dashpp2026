@@ -239,22 +239,23 @@
       const recordsList = getRecordsArray(dataset);
 
        // 4. Elementos do DOM
-      const els = {
+     const els = {
         schoolSelect: document.querySelector("#schoolSelect"),
         modeInputs: document.querySelectorAll("input[name='mode']"),
         summaryPill: document.querySelector("#summaryPill"),
         kpis: {
           students: document.querySelector("#kpiStudents"),
-          // ... outros KPIs ...
+          participation: document.querySelector("#kpiParticipation"),
+          score: document.querySelector("#kpiScore"),
+          best: document.querySelector("#kpiBest")
         },
         chart: {
           title: document.querySelector("#chartTitle"),
-          // ... outros campos do gráfico ...
+          canvas: document.querySelector("#subjectChart")
         },
         table: {
           head: document.querySelector("#detailHead"),
-          body: document.querySelector("#detailBody"),
-          subtitle: document.querySelector("#tableSubtitle")
+          body: document.querySelector("#detailBody")
         }
       };
 
