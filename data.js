@@ -16,7 +16,7 @@ window.PROVA_PAULISTA_DATA = {
       "FILO",
       "SOC",
       "BIO",
-      "F?S",
+      "FÍS",
       "QUI",
       "FIN",
       "TEC"
@@ -373,7 +373,7 @@ window.PROVA_PAULISTA_DATA = {
         "FILO": 0.825,
         "SOC": 0.5454545454545454,
         "BIO": 0.5481481481481482,
-        "F?S": null,
+        "FÍS": 0.402173913043478,
         "QUI": 0.5185185185185185,
         "FIN": 0.5876923076923077,
         "TEC": 0.5714285714285714
