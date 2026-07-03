@@ -230,8 +230,14 @@
       function sanitizeData(data) {
         if (!data || !data.metadata) return data;
         
-        // Regra inteligente para identificar Física não importando o erro de codificação (F?S, FS, etc)
-        const isFisica = (key) => typeof key === 'string' && key.length === 3 && key.startsWith('F') && key.endsWith('S');
+        // Regra ultra-resiliente para identificar Física (F?S, FS, FÃS, etc).
+        // Removemos o limite de quantidade de letras pois erros de acentuação 
+        // do Excel costumam gerar caracteres duplos "invisíveis" no código.
+        const isFisica = (key) => {
+          if (typeof key !== 'string') return false;
+          const cleanKey = key.trim().toUpperCase();
+          return cleanKey.startsWith('F') && cleanKey.endsWith('S');
+        };
         
         data.metadata.componentes = data.metadata.componentes.map(c => isFisica(c) ? "FÍS" : c);
         
@@ -294,13 +300,13 @@
       // LOGIC & UTILS
       // ============================================================================
       function formatPercent(value) {
-        if (value === null || value === undefined || Number.isNaN(value)) return "-";
-        return (value * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+        if (value === null || value === undefined || value === "" || Number.isNaN(Number(value))) return "-";
+        return (Number(value) * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
       }
 
       function formatDelta(diff, isPercent = true) {
-        if (diff === null || diff === undefined || Number.isNaN(diff)) return "";
-        const val = isPercent ? diff * 100 : diff;
+        if (diff === null || diff === undefined || diff === "" || Number.isNaN(Number(diff))) return "";
+        const val = isPercent ? Number(diff) * 100 : Number(diff);
         const formatted = Math.abs(val).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         if (val > 0) return `<span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i>+${formatted}${isPercent ? 'pp' : ''}</span>`;
         if (val < 0) return `<span class="text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"><i data-lucide="trending-down" class="w-3 h-3"></i>-${formatted}${isPercent ? 'pp' : ''}</span>`;
@@ -323,7 +329,7 @@
           sumPart += (r.participacao * r.totalAlunos);
           sumAcertos += (r.acertos * r.totalAlunos);
           Object.entries(r.componentes).forEach(([comp, val]) => {
-            if (val !== null) {
+            if (val !== null && val !== undefined) {
               compAcertos[comp] = (compAcertos[comp] || 0) + (val * r.totalAlunos);
               compAlunos[comp] = (compAlunos[comp] || 0) + r.totalAlunos;
             }
@@ -355,7 +361,7 @@
         if (!record || !record.componentes) return { name: "-", value: -1 };
         let best = { name: "-", value: -1 };
         Object.entries(record.componentes).forEach(([comp, val]) => {
-          if (val !== null && val > best.value) best = { name: comp, value: val };
+          if (val !== null && val !== undefined && val > best.value) best = { name: comp, value: val };
         });
         return best;
       }
@@ -364,7 +370,7 @@
         if (!record || !record.componentes) return { name: "-", value: 100 };
         let worst = { name: "-", value: 100 };
         Object.entries(record.componentes).forEach(([comp, val]) => {
-          if (val !== null && val < worst.value) worst = { name: comp, value: val };
+          if (val !== null && val !== undefined && val < worst.value) worst = { name: comp, value: val };
         });
         return worst;
       }
@@ -411,15 +417,15 @@
           els.chart.title.textContent = "Desempenho Comparativo";
           els.chart.subtitle.textContent = "Acertos 1º Bimestre vs 2º Bimestre";
           datasets = [
-            { label: '1º Bimestre', data: subjects.map(s => data.bim1.componentes[s] !== null ? data.bim1.componentes[s] * 100 : null), backgroundColor: '#94a3b8', borderRadius: 4 },
-            { label: '2º Bimestre', data: subjects.map(s => data.bim2.componentes[s] !== null ? data.bim2.componentes[s] * 100 : null), backgroundColor: '#4f46e5', borderRadius: 4 } // indigo-600
+            { label: '1º Bimestre', data: subjects.map(s => data.bim1.componentes[s] !== null && data.bim1.componentes[s] !== undefined ? data.bim1.componentes[s] * 100 : null), backgroundColor: '#94a3b8', borderRadius: 4 },
+            { label: '2º Bimestre', data: subjects.map(s => data.bim2.componentes[s] !== null && data.bim2.componentes[s] !== undefined ? data.bim2.componentes[s] * 100 : null), backgroundColor: '#4f46e5', borderRadius: 4 }
           ];
         } else {
           const active = mode === "1" ? data.bim1 : data.bim2;
           els.chart.title.textContent = `Desempenho - ${mode}º Bimestre`;
           els.chart.subtitle.textContent = "Acertos por componente curricular";
           if (active) {
-            datasets = [{ label: `${mode}º Bimestre`, data: subjects.map(s => active.componentes[s] !== null ? active.componentes[s] * 100 : null), backgroundColor: mode === '1' ? '#94a3b8' : '#4f46e5', borderRadius: 4 }];
+            datasets = [{ label: `${mode}º Bimestre`, data: subjects.map(s => active.componentes[s] !== null && active.componentes[s] !== undefined ? active.componentes[s] * 100 : null), backgroundColor: mode === '1' ? '#94a3b8' : '#4f46e5', borderRadius: 4 }];
           }
         }
 
@@ -439,7 +445,7 @@
           els.table.head.innerHTML = `<tr><th class="px-4 py-3 bg-slate-50 border-b">Componente</th><th class="px-4 py-3 bg-slate-50 border-b text-right">1º Bim</th><th class="px-4 py-3 bg-slate-50 border-b text-right">2º Bim</th><th class="px-4 py-3 bg-slate-50 border-b text-right">Evolução</th></tr>`;
           els.table.body.innerHTML = subjects.map(sub => {
             const v1 = data.bim1.componentes[sub], v2 = data.bim2.componentes[sub];
-            const diff = (v1 !== null && v2 !== null) ? (v2 - v1) : null;
+            const diff = (v1 !== null && v1 !== undefined && v2 !== null && v2 !== undefined) ? (v2 - v1) : null;
             return `<tr class="hover:bg-slate-50/50 transition-colors"><td class="px-4 py-3 font-semibold text-slate-800">${sub}</td><td class="px-4 py-3 text-right">${formatPercent(v1)}</td><td class="px-4 py-3 text-right">${formatPercent(v2)}</td><td class="px-4 py-3 flex justify-end">${formatDelta(diff)}</td></tr>`;
           }).join("");
         } else {
@@ -472,11 +478,9 @@
         }
       }
 
-      // Formatação simples de Markdown gerado pelo LLM para HTML
       function parseMarkdown(text) {
-        let html = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); // Negrito
-        html = html.replace(/\*(.*?)\*/g, '<i>$1</i>'); // Itálico
-        // Converte linhas com asterisco inicial em listas
+        let html = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
+        html = html.replace(/\*(.*?)\*/g, '<i>$1</i>'); 
         const lines = html.split('\n');
         let inList = false;
         html = lines.map(line => {
@@ -494,7 +498,7 @@
       }
 
       async function askGemini(prompt) {
-        const apiKey = ""; // Chave injetada em tempo de execução pelo ambiente
+        const apiKey = ""; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
         
         const payload = {
@@ -530,7 +534,6 @@
         const activeData = getActiveDataForAI();
         if (!activeData) return;
 
-        // UI Loading State
         els.ai.btnSummary.disabled = true;
         els.ai.btnActionPlan.disabled = true;
         els.ai.outputContainer.classList.remove("hidden");
@@ -566,7 +569,6 @@
         els.ai.btnActionPlan.disabled = false;
       }
 
-      // Eventos dos botões de IA
       els.ai.btnSummary.addEventListener('click', () => handleAiRequest('summary'));
       els.ai.btnActionPlan.addEventListener('click', () => handleAiRequest('actionPlan'));
 
@@ -583,7 +585,6 @@
         renderChart(data, mode);
         renderTable(data, mode);
         
-        // Esconde o output da IA sempre que muda o contexto (filtro ou bimestre)
         els.ai.outputContainer.classList.add("hidden");
         els.ai.outputText.innerHTML = "";
         
