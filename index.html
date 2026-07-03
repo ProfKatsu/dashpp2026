@@ -431,17 +431,19 @@
       // CORE UPDATE & INIT
       // ============================================================================
       function update() {
-        const mode = getSelectedMode();
-        const data = getCurrentData();
-        const label = els.schoolSelect.value === "__all__" ? `${dataset.escolas.length} escolas conectadas` : dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
-        els.summaryPill.textContent = label;
+  const mode = getSelectedMode();
+  const data = getCurrentData();
+  const label = els.schoolSelect.value === "__all__" ? `${dataset.escolas.length} escolas conectadas` : dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
+  
+  els.summaryPill.textContent = label;
 
-        renderKPIs(data, mode);
-        renderChart(data, mode);
-        renderTable(data, mode);
-              
-        initIcons();
-      }
+  renderKPIs(data, mode);
+  renderChart(data, mode);
+  renderTable(data, mode);
+            
+  initIcons();
+}
+
 
       function init() {
         els.schoolSelect.innerHTML = `<option value="__all__">Visão Geral (Todas as escolas)</option>` + 
