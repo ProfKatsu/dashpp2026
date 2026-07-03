@@ -422,7 +422,7 @@
           els.chart.title.textContent = "Desempenho Comparativo";
           els.chart.subtitle.textContent = "Acertos 1º Bimestre vs 2º Bimestre";
           datasets = [
-            { label: '1º Bimestre', data: subjects.map(s => data.bim1.componentes[s] !== null && data.bim1.componentes[s] !== undefined ? data.bim1.componentes[s] * 100 : null), backgroundColor: '#94a3b8', borderRadius: 4 },
+            { label: '1º Bimestre', data: subjects.map(s => data.bim1.componentes[s] !== null && data.bim1.componentes[s] !== undefined ? data.bim1.componentes[s] * 100 : null), backgroundColor: '#F72585', borderRadius: 4 },
             { label: '2º Bimestre', data: subjects.map(s => data.bim2.componentes[s] !== null && data.bim2.componentes[s] !== undefined ? data.bim2.componentes[s] * 100 : null), backgroundColor: '#4f46e5', borderRadius: 4 }
           ];
         } else {
