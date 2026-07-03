@@ -617,21 +617,29 @@
     function fecharAviso() {
   document.getElementById('avisoModal').style.display = 'none';}
 
-    function gerarPDF() {
+   function gerarPDF() {
   // Seleciona o conteúdo principal do dashboard
   const elemento = document.querySelector('main');
   
-  // Configurações do PDF
+  // Configurações do PDF atualizadas
   const opt = {
-    margin:       10,
+    margin:       5, // Margem um pouco menor para caber melhor
     filename:     'Relatorio_Prova_Paulista.pdf',
     image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    html2canvas:  { 
+      scale: 2, 
+      useCORS: true,
+      windowWidth: 1366 // Força o formato de tela de computador (desktop)
+    },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+    
+    // Essa é a regra mágica que impede o corte no meio dos gráficos:
+    pagebreak:    { mode: 'avoid-all' } 
   };
 
   // Executa a geração
   html2pdf().set(opt).from(elemento).save();
+}
 }
   </script>
   <!-- Modal de Aviso -->
