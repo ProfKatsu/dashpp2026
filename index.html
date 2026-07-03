@@ -617,28 +617,29 @@
     function fecharAviso() {
   document.getElementById('avisoModal').style.display = 'none';}
 
-   function gerarPDF() {
-  // Seleciona o conteúdo principal do dashboard
+ function gerarPDF() {
   const elemento = document.querySelector('main');
   
-  // Configurações do PDF atualizadas
+  // 1. Guarda o estilo atual para não desconfigurar a tela do utilizador depois
+  const estiloOriginal = elemento.style.cssText;
+  
+  // 2. Trava a largura da tela em 1200px (tamanho de ecrã de computador) temporariamente
+  elemento.style.width = '1200px';
+  elemento.style.maxWidth = '1200px';
+  
+  // 3. Configurações limpas e seguras para a geração do PDF
   const opt = {
-    margin:       5, // Margem um pouco menor para caber melhor
+    margin:       10,
     filename:     'Relatorio_Prova_Paulista.pdf',
     image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { 
-      scale: 2, 
-      useCORS: true,
-      windowWidth: 1366 // Força o formato de tela de computador (desktop)
-    },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-    
-    // Essa é a regra mágica que impede o corte no meio dos gráficos:
-    pagebreak:    { mode: 'avoid-all' } 
+    html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
   };
 
-  // Executa a geração
-  html2pdf().set(opt).from(elemento).save();
+  // 4. Gera o PDF e, quando terminar, devolve o painel ao tamanho normal
+  html2pdf().set(opt).from(elemento).save().then(() => {
+    elemento.style.cssText = estiloOriginal;
+  });
 }
 
   </script>
