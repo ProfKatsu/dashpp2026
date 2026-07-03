@@ -619,46 +619,48 @@
 
 function gerarPDF() {
   const elemento = document.querySelector('main');
-  const chart = document.getElementById('subjectChart');
+  
+  // Captura as seções do gráfico e da tabela para isolá-las
+  const chartSection = document.getElementById('subjectChart').closest('section');
+  const tableSection = document.getElementById('detailBody').closest('section');
+  const containerGrid = chartSection.parentElement;
   
   // 1. Guarda o visual original do seu painel
   const estiloOriginal = elemento.style.cssText;
-  const classesOriginais = elemento.className;
-  const chartClasses = chart ? chart.className : "";
+  const classesGridOriginais = containerGrid.className;
   
-  // 2. O TRUQUE DE MESTRE para caber em 1 página A4:
-  // Reduzimos o padding (p-4) e os espaços entre os blocos (gap-2)
-  elemento.className = "flex-1 w-full p-4 flex flex-col gap-2 bg-white"; 
-  elemento.style.width = '1600px'; 
-  elemento.style.maxWidth = '1600px';
+  // 2. Prepara o layout (largura fixa em 1200px para manter o design de computador)
+  elemento.style.width = '1200px'; 
+  elemento.style.maxWidth = '1200px';
   
-  // Reduzimos a altura do gráfico temporariamente (de 400px para 260px)
-  // Isto é crucial para não ultrapassar a altura da folha A4
-  if (chart) {
-    chart.className = "relative w-full h-[260px]";
-  }
+  // Desfaz a grade (grid) que coloca gráfico e tabela lado a lado
+  containerGrid.className = "flex flex-col gap-6";
   
-  // 3. Configura a folha A4 na horizontal
+  // Adiciona uma classe temporária que forçará a quebra de página
+  chartSection.classList.add('quebra-pagina');
+  tableSection.classList.add('quebra-pagina');
+  
+  // 3. Configura o PDF com regras de quebra de página (pagebreak)
   const opt = {
-    margin:       5, // margem pequena de 5mm para aproveitar bem o espaço
-    filename:     'Relatorio_Prova_Paulista.pdf',
+    margin:       10,
+    filename:     'Relatorio_Prova_Paulista_Paginado.pdf',
     image:        { type: 'jpeg', quality: 1 },
     html2canvas:  { 
       scale: 2, 
       useCORS: true, 
-      windowWidth: 1600,
+      windowWidth: 1200,
       scrollY: 0
     },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
+    pagebreak:    { before: '.quebra-pagina' } // A mágica acontece aqui!
   };
 
   // 4. Gera o PDF e restaura o ecrã do utilizador instantaneamente
   html2pdf().set(opt).from(elemento).save().then(() => {
-    elemento.className = classesOriginais;
     elemento.style.cssText = estiloOriginal;
-    if (chart) {
-      chart.className = chartClasses;
-    }
+    containerGrid.className = classesGridOriginais;
+    chartSection.classList.remove('quebra-pagina');
+    tableSection.classList.remove('quebra-pagina');
   });
 }
 
