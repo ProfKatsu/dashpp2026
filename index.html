@@ -607,5 +607,20 @@
       init();
     });
   </script>
+  <!-- Modal de Aviso -->
+<div id="avisoModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+  <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 text-center">
+    <i data-lucide="info" class="w-12 h-12 text-blue-600 mx-auto mb-4"></i>
+    <h2 class="text-xl font-bold text-slate-900 mb-4">Aviso Importante</h2>
+    <p class="text-slate-600 mb-6 text-left">
+      Os dados utilizados para o dashboard foram extraídos em: <strong>03/07/2026 às 08:38</strong>. 
+      <br><br>
+      Além disso, as análises devem sempre ser validadas pelo olhar pedagógico da equipe escolar.
+    </p>
+    <button onclick="fecharAviso()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors">
+      Ciente
+    </button>
+  </div>
+</div>
 </body>
 </html>
