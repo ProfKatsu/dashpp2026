@@ -20,6 +20,12 @@
     .glass-header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); }
     .table-container::-webkit-scrollbar { width: 6px; height: 6px; }
     .table-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+    
+    /* Simples formatação para o output do markdown do Gemini */
+    .ai-content b, .ai-content strong { font-weight: 700; color: #1e293b; }
+    .ai-content p { margin-bottom: 0.75rem; }
+    .ai-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+    .ai-content li { margin-bottom: 0.25rem; }
   </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
@@ -122,6 +128,35 @@
       </article>
     </section>
 
+    <!-- ✨ Integração IA Gemini ✨ -->
+    <section class="bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-5 rounded-2xl shadow-sm border border-indigo-100 flex flex-col gap-4">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i>
+        <h2 class="text-lg font-bold text-slate-900">Assistente Pedagógico IA</h2>
+      </div>
+      
+      <p class="text-sm text-slate-600">Utilize a inteligência artificial para analisar os dados visíveis no momento e gerar insights práticos para a coordenação.</p>
+      
+      <div class="flex flex-wrap gap-3">
+        <button id="btnAiSummary" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+          ✨ Analisar Desempenho
+        </button>
+        <button id="btnAiActionPlan" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <i data-lucide="list-todo" class="w-4 h-4"></i>
+          ✨ Plano de Ação (Matéria Crítica)
+        </button>
+      </div>
+
+      <!-- Caixa de Resposta da IA -->
+      <div id="aiOutputContainer" class="hidden mt-2 relative">
+        <div class="absolute top-3 right-3 text-indigo-200 animate-pulse">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </div>
+        <div id="aiOutputText" class="ai-content bg-white p-5 rounded-xl border border-indigo-100 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed shadow-inner min-h-[100px]"></div>
+      </div>
+    </section>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       <!-- Gráfico (Chart.js) -->
@@ -156,32 +191,26 @@
 
   <!-- ========================================================================= -->
   <!-- IMPORTAÇÃO DO ARQUIVO EXTERNO COM SEUS DADOS ORIGINAIS -->
-  <!-- Mantenha o arquivo "data.js" na mesma pasta que este HTML -->
   <script src="data.js"></script>
   <!-- ========================================================================= -->
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       
-      // 1. Inicia os ícones com proteção contra bloqueios de rede
+      // 1. Inicia os ícones
       function initIcons() {
         try {
-          if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-          }
-        } catch (e) {
-          console.warn("Ícones não puderam ser carregados.");
-        }
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+        } catch (e) { console.warn("Ícones não puderam ser carregados."); }
       }
       initIcons();
 
-      // 2. Proteção: Verifica se o data.js foi lido corretamente
+      // 2. Verifica se o data.js foi lido corretamente
       if (typeof window.PROVA_PAULISTA_DATA === 'undefined') {
         document.querySelector("main").innerHTML = `
           <div class="bg-red-50 border border-red-200 p-8 rounded-2xl text-center shadow-sm">
             <h2 class="text-2xl font-bold text-red-700 mb-2">Erro de Leitura dos Dados</h2>
-            <p class="text-red-600 mb-4">O arquivo <strong>data.js</strong> não foi encontrado ou possui um erro de digitação/sintaxe internamente.</p>
-            <p class="text-slate-600 text-sm">Certifique-se de que o arquivo <code>data.js</code> está salvo na mesma pasta que este arquivo HTML.</p>
+            <p class="text-red-600 mb-4">O arquivo <strong>data.js</strong> não foi encontrado ou possui um erro.</p>
           </div>
         `;
         return;
@@ -189,30 +218,32 @@
 
       const rawData = window.PROVA_PAULISTA_DATA;
 
-      // 3. Função Inteligente: Descobre o nome do seu array de dados automaticamente
+      // 3. Helper Functions de Dados
       function getRecordsArray(data) {
         if (data.registros) return data.registros;
         if (data.resultados) return data.resultados;
         if (data.dados) return data.dados;
-        // Se for outro nome qualquer, procura o primeiro array disponível
         const key = Object.keys(data).find(k => k !== 'metadata' && k !== 'escolas' && Array.isArray(data[k]));
         return key ? data[key] : [];
       }
 
-      // 4. Limpeza e correção automática do "F?S" para "FÍS"
       function sanitizeData(data) {
         if (!data || !data.metadata) return data;
         
-        // Corrige a lista mestre
-        data.metadata.componentes = data.metadata.componentes.map(c => c === "F?S" ? "FÍS" : c);
+        // Regra inteligente para identificar Física não importando o erro de codificação (F?S, FS, etc)
+        const isFisica = (key) => typeof key === 'string' && key.length === 3 && key.startsWith('F') && key.endsWith('S');
         
-        // Corrige os registros
+        data.metadata.componentes = data.metadata.componentes.map(c => isFisica(c) ? "FÍS" : c);
+        
         const records = getRecordsArray(data);
         if (records) {
           records.forEach(r => {
-            if (r.componentes && r.componentes["F?S"] !== undefined) {
-              r.componentes["FÍS"] = r.componentes["F?S"];
-              delete r.componentes["F?S"];
+            if (r.componentes) {
+              const fisKey = Object.keys(r.componentes).find(isFisica);
+              if (fisKey && fisKey !== "FÍS") {
+                r.componentes["FÍS"] = r.componentes[fisKey];
+                delete r.componentes[fisKey];
+              }
             }
           });
         }
@@ -221,14 +252,13 @@
 
       const dataset = sanitizeData(rawData);
       const subjects = dataset.metadata.componentes;
-      const recordsList = getRecordsArray(dataset); // Usa a lista detectada de forma inteligente
+      const recordsList = getRecordsArray(dataset);
 
-      // 5. Mapeamento de Elementos do DOM
+      // 4. Elementos do DOM
       const els = {
         schoolSelect: document.querySelector("#schoolSelect"),
         modeInputs: document.querySelectorAll("input[name='mode']"),
         summaryPill: document.querySelector("#summaryPill"),
-        
         kpis: {
           students: document.querySelector("#kpiStudents"),
           studentsDelta: document.querySelector("#kpiStudentsDelta"),
@@ -239,23 +269,30 @@
           best: document.querySelector("#kpiBest"),
           bestDelta: document.querySelector("#kpiBestDelta"),
         },
-        
         chart: {
           title: document.querySelector("#chartTitle"),
           subtitle: document.querySelector("#chartSubtitle"),
           canvas: document.querySelector("#subjectChart")
         },
-        
         table: {
           head: document.querySelector("#detailHead"),
           body: document.querySelector("#detailBody"),
           subtitle: document.querySelector("#tableSubtitle")
+        },
+        // IA Elements
+        ai: {
+          btnSummary: document.querySelector("#btnAiSummary"),
+          btnActionPlan: document.querySelector("#btnAiActionPlan"),
+          outputContainer: document.querySelector("#aiOutputContainer"),
+          outputText: document.querySelector("#aiOutputText")
         }
       };
 
       let chartInstance = null;
 
-      // Utilitários
+      // ============================================================================
+      // LOGIC & UTILS
+      // ============================================================================
       function formatPercent(value) {
         if (value === null || value === undefined || Number.isNaN(value)) return "-";
         return (value * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
@@ -265,7 +302,6 @@
         if (diff === null || diff === undefined || Number.isNaN(diff)) return "";
         const val = isPercent ? diff * 100 : diff;
         const formatted = Math.abs(val).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-        
         if (val > 0) return `<span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i>+${formatted}${isPercent ? 'pp' : ''}</span>`;
         if (val < 0) return `<span class="text-red-600 bg-red-50 px-2 py-0.5 rounded-full text-xs flex items-center gap-1"><i data-lucide="trending-down" class="w-3 h-3"></i>-${formatted}${isPercent ? 'pp' : ''}</span>`;
         return `<span class="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full text-xs">0</span>`;
@@ -276,22 +312,16 @@
         return checked ? checked.value : "compare";
       }
 
-      // Lógica de cálculo
       function aggregateRecords(bimestre) {
         const records = recordsList.filter(r => r.bimestre == bimestre);
         if (records.length === 0) return null;
-
-        let totalAlunos = 0;
-        let sumPart = 0;
-        let sumAcertos = 0;
-        let compAcertos = {};
-        let compAlunos = {};
+        let totalAlunos = 0, sumPart = 0, sumAcertos = 0;
+        let compAcertos = {}, compAlunos = {};
 
         records.forEach(r => {
           totalAlunos += r.totalAlunos;
           sumPart += (r.participacao * r.totalAlunos);
           sumAcertos += (r.acertos * r.totalAlunos);
-
           Object.entries(r.componentes).forEach(([comp, val]) => {
             if (val !== null) {
               compAcertos[comp] = (compAcertos[comp] || 0) + (val * r.totalAlunos);
@@ -301,47 +331,49 @@
         });
 
         const result = {
-          bimestre,
-          totalAlunos,
+          bimestre, totalAlunos,
           participacao: totalAlunos > 0 ? sumPart / totalAlunos : 0,
           acertos: totalAlunos > 0 ? sumAcertos / totalAlunos : 0,
           componentes: {}
         };
-
         subjects.forEach(comp => {
           result.componentes[comp] = compAlunos[comp] ? (compAcertos[comp] / compAlunos[comp]) : null;
         });
-
         return result;
       }
 
       function getCurrentData() {
         const school = els.schoolSelect.value;
-        if (school === "__all__") {
-          return { bim1: aggregateRecords(1), bim2: aggregateRecords(2) };
-        } else {
-          return {
-            bim1: recordsList.find(r => r.escola === school && r.bimestre === 1),
-            bim2: recordsList.find(r => r.escola === school && r.bimestre === 2)
-          };
-        }
+        if (school === "__all__") return { bim1: aggregateRecords(1), bim2: aggregateRecords(2) };
+        return {
+          bim1: recordsList.find(r => r.escola === school && r.bimestre === 1),
+          bim2: recordsList.find(r => r.escola === school && r.bimestre === 2)
+        };
       }
 
       function getBestComponent(record) {
-        if (!record || !record.componentes) return null;
+        if (!record || !record.componentes) return { name: "-", value: -1 };
         let best = { name: "-", value: -1 };
         Object.entries(record.componentes).forEach(([comp, val]) => {
-          if (val !== null && val > best.value) {
-            best = { name: comp, value: val };
-          }
+          if (val !== null && val > best.value) best = { name: comp, value: val };
         });
         return best;
       }
 
-      // Renderizações da UI
+      function getWorstComponent(record) {
+        if (!record || !record.componentes) return { name: "-", value: 100 };
+        let worst = { name: "-", value: 100 };
+        Object.entries(record.componentes).forEach(([comp, val]) => {
+          if (val !== null && val < worst.value) worst = { name: comp, value: val };
+        });
+        return worst;
+      }
+
+      // ============================================================================
+      // RENDER UI
+      // ============================================================================
       function renderKPIs(data, mode) {
-        const d1 = data.bim1;
-        const d2 = data.bim2;
+        const d1 = data.bim1, d2 = data.bim2;
         const active = mode === "1" ? d1 : (mode === "2" ? d2 : d2);
 
         if (!active) {
@@ -361,7 +393,6 @@
           els.kpis.studentsDelta.innerHTML = formatDelta(d2.totalAlunos - d1.totalAlunos, false);
           els.kpis.participationDelta.innerHTML = formatDelta(d2.participacao - d1.participacao);
           els.kpis.scoreDelta.innerHTML = formatDelta(d2.acertos - d1.acertos);
-          
           const bestD1 = getBestComponent(d1);
           els.kpis.bestDelta.innerHTML += ` <span class="text-slate-400 text-xs font-normal ml-1">(era ${bestD1.name}: ${formatPercent(bestD1.value)})</span>`;
         } else {
@@ -372,65 +403,32 @@
       }
 
       function renderChart(data, mode) {
-        // Trava de proteção caso o Chart.js não tenha carregado
-        if (typeof Chart === 'undefined') {
-          els.chart.canvas.parentElement.innerHTML = '<div class="flex items-center justify-center h-full text-slate-400 text-sm">O gráfico não pôde ser carregado (Verifique a rede).</div>';
-          return;
-        }
-
+        if (typeof Chart === 'undefined') return;
         if (chartInstance) chartInstance.destroy();
 
         let datasets = [];
-        const labels = subjects;
-
         if (mode === "compare" && data.bim1 && data.bim2) {
           els.chart.title.textContent = "Desempenho Comparativo";
           els.chart.subtitle.textContent = "Acertos 1º Bimestre vs 2º Bimestre";
           datasets = [
-            {
-              label: '1º Bimestre',
-              data: subjects.map(s => data.bim1.componentes[s] !== null ? data.bim1.componentes[s] * 100 : null),
-              backgroundColor: '#94a3b8',
-              borderRadius: 4,
-            },
-            {
-              label: '2º Bimestre',
-              data: subjects.map(s => data.bim2.componentes[s] !== null ? data.bim2.componentes[s] * 100 : null),
-              backgroundColor: '#2563eb',
-              borderRadius: 4,
-            }
+            { label: '1º Bimestre', data: subjects.map(s => data.bim1.componentes[s] !== null ? data.bim1.componentes[s] * 100 : null), backgroundColor: '#94a3b8', borderRadius: 4 },
+            { label: '2º Bimestre', data: subjects.map(s => data.bim2.componentes[s] !== null ? data.bim2.componentes[s] * 100 : null), backgroundColor: '#4f46e5', borderRadius: 4 } // indigo-600
           ];
         } else {
           const active = mode === "1" ? data.bim1 : data.bim2;
           els.chart.title.textContent = `Desempenho - ${mode}º Bimestre`;
           els.chart.subtitle.textContent = "Acertos por componente curricular";
-          
           if (active) {
-            datasets = [{
-              label: `${mode}º Bimestre`,
-              data: subjects.map(s => active.componentes[s] !== null ? active.componentes[s] * 100 : null),
-              backgroundColor: mode === '1' ? '#94a3b8' : '#2563eb',
-              borderRadius: 4,
-            }];
+            datasets = [{ label: `${mode}º Bimestre`, data: subjects.map(s => active.componentes[s] !== null ? active.componentes[s] * 100 : null), backgroundColor: mode === '1' ? '#94a3b8' : '#4f46e5', borderRadius: 4 }];
           }
         }
 
         chartInstance = new Chart(els.chart.canvas, {
-          type: 'bar',
-          data: { labels, datasets },
+          type: 'bar', data: { labels: subjects, datasets },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter' } } },
-              tooltip: {
-                callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw ? ctx.raw.toFixed(1) + '%' : '-'}` }
-              }
-            },
-            scales: {
-              y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
-              x: { grid: { display: false } }
-            }
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter' } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw ? ctx.raw.toFixed(1) + '%' : '-'}` } } },
+            scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } }
           }
         });
       }
@@ -438,75 +436,168 @@
       function renderTable(data, mode) {
         if (mode === "compare" && data.bim1 && data.bim2) {
           els.table.subtitle.textContent = "Comparação detalhada 1º e 2º bimestres";
-          els.table.head.innerHTML = `
-            <tr>
-              <th class="px-4 py-3 bg-slate-50 border-b">Componente</th>
-              <th class="px-4 py-3 bg-slate-50 border-b text-right">1º Bim</th>
-              <th class="px-4 py-3 bg-slate-50 border-b text-right">2º Bim</th>
-              <th class="px-4 py-3 bg-slate-50 border-b text-right">Evolução</th>
-            </tr>`;
-          
+          els.table.head.innerHTML = `<tr><th class="px-4 py-3 bg-slate-50 border-b">Componente</th><th class="px-4 py-3 bg-slate-50 border-b text-right">1º Bim</th><th class="px-4 py-3 bg-slate-50 border-b text-right">2º Bim</th><th class="px-4 py-3 bg-slate-50 border-b text-right">Evolução</th></tr>`;
           els.table.body.innerHTML = subjects.map(sub => {
-            const v1 = data.bim1.componentes[sub];
-            const v2 = data.bim2.componentes[sub];
+            const v1 = data.bim1.componentes[sub], v2 = data.bim2.componentes[sub];
             const diff = (v1 !== null && v2 !== null) ? (v2 - v1) : null;
-            
-            return `
-              <tr class="hover:bg-slate-50/50 transition-colors">
-                <td class="px-4 py-3 font-semibold text-slate-800">${sub}</td>
-                <td class="px-4 py-3 text-right">${formatPercent(v1)}</td>
-                <td class="px-4 py-3 text-right">${formatPercent(v2)}</td>
-                <td class="px-4 py-3 flex justify-end">${formatDelta(diff)}</td>
-              </tr>`;
+            return `<tr class="hover:bg-slate-50/50 transition-colors"><td class="px-4 py-3 font-semibold text-slate-800">${sub}</td><td class="px-4 py-3 text-right">${formatPercent(v1)}</td><td class="px-4 py-3 text-right">${formatPercent(v2)}</td><td class="px-4 py-3 flex justify-end">${formatDelta(diff)}</td></tr>`;
           }).join("");
         } else {
           const active = mode === "1" ? data.bim1 : data.bim2;
           els.table.subtitle.textContent = `Indicadores do ${mode}º bimestre`;
-          els.table.head.innerHTML = `
-            <tr>
-              <th class="px-4 py-3 bg-slate-50 border-b">Componente</th>
-              <th class="px-4 py-3 bg-slate-50 border-b text-right">Acertos</th>
-            </tr>`;
-          
+          els.table.head.innerHTML = `<tr><th class="px-4 py-3 bg-slate-50 border-b">Componente</th><th class="px-4 py-3 bg-slate-50 border-b text-right">Acertos</th></tr>`;
           if (active) {
-            els.table.body.innerHTML = subjects.map(sub => `
-              <tr class="hover:bg-slate-50/50 transition-colors">
-                <td class="px-4 py-3 font-semibold text-slate-800">${sub}</td>
-                <td class="px-4 py-3 text-right">${formatPercent(active.componentes[sub])}</td>
-              </tr>`).join("");
+            els.table.body.innerHTML = subjects.map(sub => `<tr class="hover:bg-slate-50/50 transition-colors"><td class="px-4 py-3 font-semibold text-slate-800">${sub}</td><td class="px-4 py-3 text-right">${formatPercent(active.componentes[sub])}</td></tr>`).join("");
           } else {
             els.table.body.innerHTML = "<tr><td colspan='2' class='text-center py-4'>Sem dados</td></tr>";
           }
         }
       }
 
+      // ============================================================================
+      // INTEGRAÇÃO GEMINI API
+      // ============================================================================
+      async function fetchWithRetry(url, options, retries = 5) {
+        const delays = [1000, 2000, 4000, 8000, 16000];
+        for (let i = 0; i < retries; i++) {
+          try {
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(`Erro na API (Status ${response.status})`);
+            return await response.json();
+          } catch (error) {
+            if (i === retries - 1) throw error;
+            console.warn(`Falha na chamada (Tentativa ${i+1}). Retentando em ${delays[i]}ms...`);
+            await new Promise(res => setTimeout(res, delays[i]));
+          }
+        }
+      }
+
+      // Formatação simples de Markdown gerado pelo LLM para HTML
+      function parseMarkdown(text) {
+        let html = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); // Negrito
+        html = html.replace(/\*(.*?)\*/g, '<i>$1</i>'); // Itálico
+        // Converte linhas com asterisco inicial em listas
+        const lines = html.split('\n');
+        let inList = false;
+        html = lines.map(line => {
+          if (line.trim().startsWith('* ')) {
+            const li = `<li>${line.replace('* ', '')}</li>`;
+            if (!inList) { inList = true; return `<ul>${li}`; }
+            return li;
+          } else {
+            if (inList) { inList = false; return `</ul><p>${line}</p>`; }
+            return line.trim() ? `<p>${line}</p>` : '';
+          }
+        }).join('');
+        if (inList) html += '</ul>';
+        return html;
+      }
+
+      async function askGemini(prompt) {
+        const apiKey = ""; // Chave injetada em tempo de execução pelo ambiente
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        
+        const payload = {
+          contents: [{ parts: [{ text: prompt }] }],
+          systemInstruction: { parts: [{ text: "Você é um assistente pedagógico especializado na análise de dados da educação do Estado de São Paulo. Responda de forma direta, encorajadora, estruturada e em português do Brasil." }] }
+        };
+
+        try {
+          const result = await fetchWithRetry(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          return result.candidates?.[0]?.content?.parts?.[0]?.text || "Ocorreu um erro ao gerar a análise.";
+        } catch (e) {
+          return "Desculpe, houve uma falha de conexão com a inteligência artificial. Tente novamente mais tarde.";
+        }
+      }
+
+      function getActiveDataForAI() {
+        const mode = getSelectedMode();
+        const data = getCurrentData();
+        return mode === "1" ? data.bim1 : (data.bim2 || data.bim1); 
+      }
+
+      function getTargetName() {
+        const s = els.schoolSelect.value;
+        return s === "__all__" ? "todas as escolas da regional (Visão Geral)" : s;
+      }
+
+      async function handleAiRequest(type) {
+        const activeData = getActiveDataForAI();
+        if (!activeData) return;
+
+        // UI Loading State
+        els.ai.btnSummary.disabled = true;
+        els.ai.btnActionPlan.disabled = true;
+        els.ai.outputContainer.classList.remove("hidden");
+        els.ai.outputText.innerHTML = '<div class="flex items-center gap-2 text-indigo-500"><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Processando inteligência pedagógica...</div>';
+        initIcons();
+
+        const schoolName = getTargetName();
+        const best = getBestComponent(activeData);
+        const worst = getWorstComponent(activeData);
+        
+        let prompt = "";
+        
+        if (type === 'summary') {
+          prompt = `Atuando como coordenador pedagógico, escreva uma breve análise de desempenho (máximo de 2 parágrafos curtos) para os seguintes dados de ${schoolName}:
+          - Alunos Avaliados: ${activeData.totalAlunos}
+          - Taxa de Participação: ${formatPercent(activeData.participacao)}
+          - Média Geral de Acertos: ${formatPercent(activeData.acertos)}
+          - Ponto Forte (Melhor Matéria): ${best.name} com ${formatPercent(best.value)} de acertos
+          - Maior Dificuldade (Pior Matéria): ${worst.name} com apenas ${formatPercent(worst.value)} de acertos.
+          
+          Faça um elogio aos pontos positivos e destaque educadamente a necessidade de foco na matéria com dificuldade.`;
+        } else if (type === 'actionPlan') {
+          prompt = `Como especialista em educação, os alunos de ${schoolName} tiveram apenas ${formatPercent(worst.value)} de acertos na disciplina de ${worst.name}. 
+          
+          Crie um plano de ação rápido e prático com exatamente 3 tópicos (em formato de lista, bullet points) com sugestões de estratégias metodológicas ativas para os professores de ${worst.name} aplicarem em sala de aula visando melhorar a aprendizagem. Seja direto ao ponto.`;
+        }
+
+        const responseText = await askGemini(prompt);
+        
+        els.ai.outputText.innerHTML = parseMarkdown(responseText);
+        
+        els.ai.btnSummary.disabled = false;
+        els.ai.btnActionPlan.disabled = false;
+      }
+
+      // Eventos dos botões de IA
+      els.ai.btnSummary.addEventListener('click', () => handleAiRequest('summary'));
+      els.ai.btnActionPlan.addEventListener('click', () => handleAiRequest('actionPlan'));
+
+      // ============================================================================
+      // CORE UPDATE & INIT
+      // ============================================================================
       function update() {
         const mode = getSelectedMode();
         const data = getCurrentData();
-        
-        const label = els.schoolSelect.value === "__all__" 
-          ? `${dataset.escolas.length} escolas conectadas` 
-          : dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
-        
+        const label = els.schoolSelect.value === "__all__" ? `${dataset.escolas.length} escolas conectadas` : dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
         els.summaryPill.textContent = label;
 
         renderKPIs(data, mode);
         renderChart(data, mode);
         renderTable(data, mode);
-        initIcons(); // Atualiza os ícones após re-renderizar a tabela
+        
+        // Esconde o output da IA sempre que muda o contexto (filtro ou bimestre)
+        els.ai.outputContainer.classList.add("hidden");
+        els.ai.outputText.innerHTML = "";
+        
+        initIcons();
       }
 
       function init() {
         els.schoolSelect.innerHTML = `<option value="__all__">Visão Geral (Todas as escolas)</option>` + 
           dataset.escolas.map(s => `<option value="${s.nome}">${s.label}</option>`).join("");
-
         els.schoolSelect.addEventListener("change", update);
         els.modeInputs.forEach(input => input.addEventListener("change", update));
-
         update();
       }
 
-      // Executa a aplicação
       init();
     });
   </script>
