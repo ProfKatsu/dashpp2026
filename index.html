@@ -56,6 +56,11 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
     
+    <section class="bg-blue-50 border border-blue-200 rounded-2xl p-5 text-blue-950" aria-label="Origem dos dados">
+      <h2 class="font-bold">3º bimestre de 2026 — Provas físicas</h2>
+      <p>Dados extraídos em <strong>14/10/2026 às 14:36</strong>, correspondentes exclusivamente às <strong>provas físicas</strong>.</p>
+      <p id="periodContext" class="text-sm mt-2"></p>
+    </section>
     <!-- Controles / Filtros -->
     <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center" aria-label="Filtros">
       
@@ -72,7 +77,7 @@
         <span class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
           <i data-lucide="eye" class="w-4 h-4 text-slate-400"></i> Visualização
         </span>
-        <div class="inline-flex bg-slate-100 rounded-lg p-1 border border-slate-200 w-full sm:w-auto">
+        <div class="inline-flex flex-wrap bg-slate-100 rounded-lg p-1 border border-slate-200 w-full sm:w-auto">
           <label class="flex-1 sm:flex-none cursor-pointer">
             <input type="radio" name="mode" value="1" class="peer sr-only">
             <div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all text-center">1º Bim</div>
@@ -82,7 +87,11 @@
             <div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all text-center">2º Bim</div>
           </label>
           <label class="flex-1 sm:flex-none cursor-pointer">
-            <input type="radio" name="mode" value="compare" class="peer sr-only" checked>
+            <input type="radio" name="mode" value="3" class="peer sr-only" checked>
+            <div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all text-center">3º Bim</div>
+          </label>
+          <label class="flex-1 sm:flex-none cursor-pointer">
+            <input type="radio" name="mode" value="compare" class="peer sr-only">
             <div class="px-4 py-2 text-sm font-medium text-slate-600 rounded-md peer-checked:bg-white peer-checked:text-blue-700 peer-checked:shadow-sm transition-all text-center">Comparativo</div>
           </label>
         </div>
@@ -129,9 +138,9 @@
           <i data-lucide="award" class="w-16 h-16 text-emerald-500"></i>
         </div>
         <span class="text-sm font-semibold text-slate-500 mb-1 block">Melhor Componente</span>
-        <div class="flex items-end gap-3">
+        <div class="flex flex-wrap items-end gap-3">
           <strong id="kpiBest" class="text-3xl font-extrabold text-emerald-600 truncate">-</strong>
-          <small id="kpiBestDelta" class="mb-1 font-medium"></small>
+          <small id="kpiBestDelta" class="mb-1 font-medium text-xs"></small>
         </div>
       </article>
     </section>
@@ -165,15 +174,15 @@
       </div>
     </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
       <!-- Gráfico (Chart.js) -->
-      <section class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+      <section class="min-w-0 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
         <div class="mb-4">
           <h2 id="chartTitle" class="text-lg font-bold text-slate-900">Desempenho por Componente</h2>
           <p id="chartSubtitle" class="text-sm text-slate-500">Comparação entre bimestres</p>
         </div>
-        <div class="relative w-full h-[400px] flex-1">
+        <div class="relative w-full min-w-0 h-[400px]">
           <canvas id="subjectChart" aria-label="Gráfico por componente curricular"></canvas>
         </div>
       </section>
@@ -332,6 +341,7 @@
       }
 
       function aggregateRecords(bimestre) {
+        if (bimestre === 3) return dataset.totaisTerceiroBimestre;
         const records = recordsList.filter(r => r.bimestre == bimestre);
         if (records.length === 0) return null;
         let totalAlunos = 0, sumPart = 0, sumAcertos = 0;
@@ -363,11 +373,9 @@
 
       function getCurrentData() {
         const school = els.schoolSelect.value;
-        if (school === "__all__") return { bim1: aggregateRecords(1), bim2: aggregateRecords(2) };
-        return {
-          bim1: recordsList.find(r => r.escola === school && r.bimestre === 1),
-          bim2: recordsList.find(r => r.escola === school && r.bimestre === 2)
-        };
+        return Object.fromEntries([1, 2, 3].map(b => [
+          `bim${b}`, school === "__all__" ? aggregateRecords(b) : recordsList.find(r => r.escola === school && r.bimestre === b)
+        ]));
       }
 
       function getBestComponent(record) {
@@ -392,8 +400,8 @@
       // RENDER UI
       // ============================================================================
       function renderKPIs(data, mode) {
-        const d1 = data.bim1, d2 = data.bim2;
-        const active = mode === "1" ? d1 : (mode === "2" ? d2 : d2);
+        const d1 = data.bim2, d2 = data.bim3;
+        const active = mode === "compare" ? d2 : data[`bim${mode}`];
 
         if (!active) {
           Object.values(els.kpis).forEach(el => el.innerHTML = "-");
@@ -413,7 +421,7 @@
           els.kpis.participationDelta.innerHTML = formatDelta(d2.participacao - d1.participacao);
           els.kpis.scoreDelta.innerHTML = formatDelta(d2.acertos - d1.acertos);
           const bestD1 = getBestComponent(d1);
-          els.kpis.bestDelta.innerHTML += ` <span class="text-slate-400 text-xs font-normal ml-1">(era ${bestD1.name}: ${formatPercent(bestD1.value)})</span>`;
+          els.kpis.bestDelta.innerHTML += ` <span class="text-slate-400 text-xs font-normal ml-1">(2º bim: ${bestD1.name}: ${formatPercent(bestD1.value)})</span>`;
         } else {
           els.kpis.studentsDelta.innerHTML = "";
           els.kpis.participationDelta.innerHTML = "";
@@ -426,19 +434,20 @@
         if (chartInstance) chartInstance.destroy();
 
         let datasets = [];
-        if (mode === "compare" && data.bim1 && data.bim2) {
+        if (mode === "compare") {
           els.chart.title.textContent = "Desempenho Comparativo";
-          els.chart.subtitle.textContent = "Acertos 1º Bimestre vs 2º Bimestre";
-          datasets = [
-            { label: '1º Bimestre', data: subjects.map(s => data.bim1.componentes[s] !== null && data.bim1.componentes[s] !== undefined ? data.bim1.componentes[s] * 100 : null), backgroundColor: '#F72585', borderRadius: 4 },
-            { label: '2º Bimestre', data: subjects.map(s => data.bim2.componentes[s] !== null && data.bim2.componentes[s] !== undefined ? data.bim2.componentes[s] * 100 : null), backgroundColor: '#4f46e5', borderRadius: 4 }
-          ];
+          els.chart.subtitle.textContent = "1º, 2º e 3º bimestres — 3º bimestre: provas físicas";
+          datasets = [1, 2, 3].map(b => ({
+            label: `${b}º Bimestre`,
+            data: subjects.map(s => data[`bim${b}`]?.componentes[s] == null ? null : data[`bim${b}`].componentes[s] * 100),
+            backgroundColor: {1: '#F72585', 2: '#4f46e5', 3: '#059669'}[b], borderRadius: 4
+          }));
         } else {
-          const active = mode === "1" ? data.bim1 : data.bim2;
+          const active = data[`bim${mode}`];
           els.chart.title.textContent = `Desempenho - ${mode}º Bimestre`;
           els.chart.subtitle.textContent = "Acertos por componente curricular";
           if (active) {
-            datasets = [{ label: `${mode}º Bimestre`, data: subjects.map(s => active.componentes[s] !== null && active.componentes[s] !== undefined ? active.componentes[s] * 100 : null), backgroundColor: mode === '1' ? '#F72585' : '#4f46e5', borderRadius: 4 }];
+            datasets = [{ label: `${mode}º Bimestre`, data: subjects.map(s => active.componentes[s] !== null && active.componentes[s] !== undefined ? active.componentes[s] * 100 : null), backgroundColor: {1: '#F72585', 2: '#4f46e5', 3: '#059669'}[mode], borderRadius: 4 }];
           }
         }
 
@@ -446,23 +455,24 @@
           type: 'bar', data: { labels: subjects, datasets },
           options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter' } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw ? ctx.raw.toFixed(1) + '%' : '-'}` } } },
+            plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter' } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw != null ? ctx.raw.toFixed(1) + '%' : '-'}` } } },
             scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } }, x: { grid: { display: false } } }
           }
         });
       }
 
       function renderTable(data, mode) {
-        if (mode === "compare" && data.bim1 && data.bim2) {
-          els.table.subtitle.textContent = "Comparação detalhada 1º e 2º bimestres";
-          els.table.head.innerHTML = `<tr><th class="px-4 py-3 bg-slate-50 border-b">Componente</th><th class="px-4 py-3 bg-slate-50 border-b text-right">1º Bim</th><th class="px-4 py-3 bg-slate-50 border-b text-right">2º Bim</th><th class="px-4 py-3 bg-slate-50 border-b text-right">Evolução</th></tr>`;
+        if (mode === "compare") {
+          els.table.subtitle.textContent = "Acertos por bimestre e variações em pontos percentuais (p.p.).";
+          const th = label => `<th class="px-3 py-3 bg-slate-50 border-b whitespace-nowrap">${label}</th>`;
+          els.table.head.innerHTML = `<tr>${['Componente', '1º Bim', '2º Bim', '3º Bim', '1º → 2º', '2º → 3º'].map(th).join('')}</tr>`;
           els.table.body.innerHTML = subjects.map(sub => {
-            const v1 = data.bim1.componentes[sub], v2 = data.bim2.componentes[sub];
-            const diff = (v1 !== null && v1 !== undefined && v2 !== null && v2 !== undefined) ? (v2 - v1) : null;
-            return `<tr class="hover:bg-slate-50/50 transition-colors"><td class="px-4 py-3 font-semibold text-slate-800">${sub}</td><td class="px-4 py-3 text-right">${formatPercent(v1)}</td><td class="px-4 py-3 text-right">${formatPercent(v2)}</td><td class="px-4 py-3 flex justify-end">${formatDelta(diff)}</td></tr>`;
-          }).join("");
+            const values = [1, 2, 3].map(b => data[`bim${b}`]?.componentes[sub]);
+            const diff = (a, b) => a == null || b == null ? null : b - a;
+            return `<tr class="hover:bg-slate-50"><td class="px-3 py-3 font-semibold">${sub}</td>${values.map(v => `<td class="px-3 py-3 text-right">${formatPercent(v)}</td>`).join('')}<td class="px-3 py-3">${formatDelta(diff(values[0], values[1])) || '-'}</td><td class="px-3 py-3">${formatDelta(diff(values[1], values[2])) || '-'}</td></tr>`;
+          }).join('');
         } else {
-          const active = mode === "1" ? data.bim1 : data.bim2;
+          const active = data[`bim${mode}`];
           els.table.subtitle.textContent = `Indicadores do ${mode}º bimestre`;
           els.table.head.innerHTML = `<tr><th class="px-4 py-3 bg-slate-50 border-b">Componente</th><th class="px-4 py-3 bg-slate-50 border-b text-right">Acertos</th></tr>`;
           if (active) {
@@ -535,7 +545,7 @@
       function getActiveDataForAI() {
         const mode = getSelectedMode();
         const data = getCurrentData();
-        return mode === "1" ? data.bim1 : (data.bim2 || data.bim1); 
+        return mode === "compare" ? data.bim3 : data[`bim${mode}`]; 
       }
 
       function getTargetName() {
@@ -594,6 +604,9 @@
         const label = els.schoolSelect.value === "__all__" ? `${dataset.escolas.length} escolas conectadas` : dataset.escolas.find(e => e.nome === els.schoolSelect.value).label;
         els.summaryPill.textContent = label;
 
+        document.getElementById('periodContext').textContent =
+          (mode === 'compare' ? 'Indicadores: 3º bimestre; variações em relação ao 2º. O comparativo reúne recortes de provas que podem ter públicos diferentes. ' : `Indicadores: ${mode}º bimestre. `) +
+          (els.schoolSelect.value === '__all__' ? 'No 3º bimestre, a visão geral usa o total regional da planilha; no 1º e 2º, mantém as médias ponderadas do painel anterior.' : 'Resultados da escola selecionada.');
         renderKPIs(data, mode);
         renderChart(data, mode);
         renderTable(data, mode);
@@ -682,7 +695,9 @@ function gerarPDF() {
     <i data-lucide="info" class="w-12 h-12 text-blue-600 mx-auto mb-4"></i>
     <h2 class="text-xl font-bold text-slate-900 mb-4">Aviso Importante</h2>
     <p class="text-slate-600 mb-6 text-left">
-      Os dados utilizados para o dashboard foram extraídos em: <strong>03/07/2026 às 08:38</strong>. 
+      Os dados do <strong>3º bimestre de 2026</strong> foram extraídos em <strong>14/10/2026 às 14:36</strong> e correspondem exclusivamente às <strong>provas físicas</strong>.
+      <br><br>
+      Os dados do 1º e do 2º bimestres mantêm a extração anterior, de <strong>03/07/2026 às 08:38</strong>. 
       <br><br>
       Além disso, as análises devem sempre ser validadas pelo olhar pedagógico da equipe escolar.
     </p>
