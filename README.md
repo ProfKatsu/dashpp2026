@@ -1,28 +1,23 @@
 # Dashboard Prova Paulista 2026
 
-Dashboard estático com resultados do 1º e 2º bimestres da Prova Paulista 2026 das escolas da Unidade Regional de Ensino de Mogi das Cruzes.
+Painel da URE Mogi das Cruzes com 1º, 2º e 3º bimestres.
 
-## Como visualizar localmente
+## Atualização do terceiro bimestre
 
-Abra o arquivo `index.html` no navegador.
+- Provas físicas. Extração em 14/10/2026 às 14:36 (horário de Brasília), informada pelo responsável.
+- Fonte: UNIDADE REGIONAL DE ENSINO prova paulista 3 bim prova física.xlsx, aba Export.
+- 66 escolas e 34.669 alunos. As escolas foram conciliadas pelo código. Foi removido apenas um espaço excedente em nome de escola para manter a correspondência histórica.
+- Linhas de total e filtros não foram tratadas como escolas. Valores ausentes continuam ausentes; percentuais mantêm sua precisão original.
+- A visão geral do 3º bimestre usa os indicadores da linha Total da fonte. As médias ponderadas por total de alunos do 1º e 2º bimestres foram preservadas; são métodos diferentes e não permitem inferir evolução individual dos estudantes.
+- O modo Comparativo mostra os três bimestres, com variações 1º → 2º e 2º → 3º. Os cartões mostram o 3º, com variação em relação ao 2º.
+- A planilha com “3 bimestre” no nome foi excluída conforme orientação do responsável: seu rodapé informa TP_PROVA é DIGITAL, apesar do nome do arquivo. Nenhum dado dessa planilha foi incorporado.
 
-## Como publicar no GitHub e Vercel
+## Publicação no projeto existente
 
-1. Crie um repositório no GitHub.
-2. Envie todos os arquivos desta pasta para o repositório.
-3. Acesse o Vercel e escolha `Add New Project`.
-4. Importe o repositório do GitHub.
-5. Em framework, escolha `Other`.
-6. Deixe o diretório raiz apontando para esta pasta.
-7. Publique.
+Substitua index.html, data.js e README.md na raiz do repositório ProfKatsu/dashpp2026 pelos arquivos deste pacote. Mantenha a integração atual da Vercel. Não é necessário criar outro projeto ou alterar a configuração de compilação.
 
-## Arquivos
+Para visualizar localmente, abra index.html. As bibliotecas visuais e de PDF já usadas pelo sistema dependem de conexão à internet.
 
-- `index.html`: estrutura da página.
-- `styles.css`: aparência do dashboard.
-- `app.js`: filtros, cálculos, cards, gráficos e tabela.
-- `data.js`: dados normalizados a partir dos arquivos XLSX.
+## Organização
 
-## Observação sobre os dados
-
-Os percentuais dos arquivos originais vieram em escala decimal, como `0.6446`. O dashboard converte esses valores para percentual, como `64,5%`.
+A página utiliza o JavaScript incorporado em index.html e os dados de data.js. app.js e styles.css são arquivos legados, preservados sem alteração, que não são carregados pela página atual.
